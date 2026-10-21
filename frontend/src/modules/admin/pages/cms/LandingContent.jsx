@@ -116,14 +116,14 @@ const SERVICES_PAGE_FIELDS = [
 
 const HERO_FIELDS = [
   { name: 'titleLine1', label: 'Headline line 1', placeholder: 'Your Ride.' },
-  { name: 'titleLine2', label: 'Headline line 2', placeholder: 'Our Priority.', help: 'Shown in the accent colour.' },
+  { name: 'titleLine2', label: 'Headline line 2', placeholder: 'Arrive Happy.', help: 'Shown in the accent colour.' },
   { name: 'subtitle', label: 'Subtitle', placeholder: 'Premium rides, verified drivers...', wide: true },
   { name: 'primaryCta', label: 'Primary button', placeholder: 'Book a Ride' },
   { name: 'secondaryCta', label: 'Secondary button', placeholder: 'Download App' },
 ];
 
 const SEO_FIELDS = [
-  { name: 'title', label: 'Browser tab title', placeholder: 'ZI CAB - Your Ride. Our Priority.', wide: true },
+  { name: 'title', label: 'Browser tab title', placeholder: 'Ferrido - Ride Easy, Arrive Happy', wide: true },
   { name: 'description', label: 'Search description', placeholder: 'ZI CAB - city, outstation and airport cabs...', wide: true },
 ];
 
@@ -137,7 +137,7 @@ const BRAND_FIELDS = [
   { name: 'logo', label: 'Logo', type: 'image', wide: true, help: 'Shown in the header, footer and intro screen. Leave empty to use the logo from General Settings.' },
   { name: 'wordmarkPrimary', label: 'Wordmark (first part)', placeholder: 'ZI' },
   { name: 'wordmarkSecondary', label: 'Wordmark (second part)', placeholder: 'CAB' },
-  { name: 'tagline', label: 'Tagline', placeholder: 'Your Ride. Our Priority.', wide: true },
+  { name: 'tagline', label: 'Tagline', placeholder: 'Ride Easy, Arrive Happy', wide: true },
   { name: 'appBlurb', label: 'App blurb', placeholder: 'Book rides in seconds...', wide: true },
   { name: 'playStoreUrl', label: 'Google Play URL', placeholder: 'https://play.google.com/store/apps/details?id=...', wide: true, help: 'Leave blank and the badge stays unclickable.' },
   { name: 'appStoreUrl', label: 'App Store URL', placeholder: 'https://apps.apple.com/app/...', wide: true },

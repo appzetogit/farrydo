@@ -72,7 +72,7 @@ const Navbar = ({ activeTab, setActiveTab, openBookingModal }) => {
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle navigation"
           >
-            {mobileMenuOpen ? <X size={26} color="#FFFFFF" /> : <Menu size={26} color="#FFFFFF" />}
+            {mobileMenuOpen ? <X size={26} color="#0B1F3A" /> : <Menu size={26} color="#0B1F3A" />}
           </button>
         </div>
       </div>
@@ -109,12 +109,13 @@ const Navbar = ({ activeTab, setActiveTab, openBookingModal }) => {
       <style>{`
         .zicab-landing {
           .navbar-header {
-            background-color: #0B1F3A;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            background-color: rgba(255, 255, 255, 0.92);
+            backdrop-filter: saturate(160%) blur(14px);
+            border-bottom: 1px solid #EEE3D6;
             position: sticky;
             top: 0;
             z-index: 1000;
-            box-shadow: 0 4px 20px rgba(7, 21, 43, 0.5);
+            box-shadow: 0 6px 24px rgba(11, 31, 58, 0.06);
           }
 
           .navbar-container {
@@ -152,25 +153,26 @@ const Navbar = ({ activeTab, setActiveTab, openBookingModal }) => {
           .logo-zi {
             font-size: 30px;
             font-weight: 800;
-            color: #FFFFFF;
+            color: #0B1F3A;
             font-style: italic;
             letter-spacing: -0.5px;
           }
 
           .logo-cab {
-            font-size: 26px;
+            font-size: 30px;
             font-weight: 800;
-            color: #00BBA9;
-            margin-left: 4px;
-            letter-spacing: 1px;
+            color: #F7941D;
+            font-style: italic;
+            letter-spacing: -0.5px;
           }
 
           .logo-tagline {
             font-size: 10.5px;
-            color: rgba(255, 255, 255, 0.7);
+            color: #64748B;
             font-weight: 400;
             letter-spacing: 0.2px;
             margin-top: 2px;
+            white-space: nowrap;
           }
 
           .desktop-nav {
@@ -182,7 +184,7 @@ const Navbar = ({ activeTab, setActiveTab, openBookingModal }) => {
           .nav-link-btn {
             background: none;
             border: none;
-            color: rgba(255, 255, 255, 0.85);
+            color: #475569;
             font-size: 14.5px;
             font-weight: 500;
             cursor: pointer;
@@ -192,11 +194,11 @@ const Navbar = ({ activeTab, setActiveTab, openBookingModal }) => {
           }
 
           .nav-link-btn:hover {
-            color: #00BBA9;
+            color: #F7941D;
           }
 
           .nav-link-btn.active {
-            color: #FFFFFF;
+            color: #0B1F3A;
             font-weight: 600;
           }
 
@@ -207,7 +209,7 @@ const Navbar = ({ activeTab, setActiveTab, openBookingModal }) => {
             transform: translateX(-50%);
             width: 18px;
             height: 3px;
-            background-color: #00BBA9;
+            background-color: #F7941D;
             border-radius: 2px;
           }
 
@@ -232,8 +234,8 @@ const Navbar = ({ activeTab, setActiveTab, openBookingModal }) => {
 
           .mobile-drawer {
             display: none;
-            background-color: #07152B;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            background-color: #FFFFFF;
+            border-top: 1px solid #EEE3D6;
             padding: 16px 20px 24px;
           }
 
@@ -247,9 +249,9 @@ const Navbar = ({ activeTab, setActiveTab, openBookingModal }) => {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            color: #FFFFFF;
+            background: #FAF7F3;
+            border: 1px solid #EEE3D6;
+            color: #0B1F3A;
             padding: 12px 16px;
             border-radius: 8px;
             font-size: 15px;
@@ -259,9 +261,9 @@ const Navbar = ({ activeTab, setActiveTab, openBookingModal }) => {
           }
 
           .mobile-nav-item.active {
-            background: rgba(0, 187, 169, 0.15);
-            border-color: #00BBA9;
-            color: #00BBA9;
+            background: rgba(247, 148, 29, 0.15);
+            border-color: #B85A06;
+            color: #F7941D;
           }
 
           .mobile-drawer-cta {

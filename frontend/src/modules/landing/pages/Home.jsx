@@ -12,7 +12,7 @@ import {
   MapPin, Users, ArrowRight, ShieldCheck, Navigation,
   Headphones, Wallet, PhoneCall, Car, Plane, Compass,
   Briefcase, Building2, ShoppingBag, Smartphone, QrCode, ChevronRight,
-  Star, BadgeCheck, Megaphone, Bike
+  Star, BadgeCheck, Megaphone, Bike, Smile, Clock
 } from 'lucide-react';
 import { useLanding } from '../landingContentContext';
 import useAppModules from '../useAppModules';
@@ -152,7 +152,7 @@ const fallbackVehicles = [
   // All page content comes from the CMS, falling back to the bundled copy so the
   // page is never blank while the request is in flight or if it fails.
   const { services, valueProps, drivers, partners, launchCities, contact, brand, hero } = useLanding();
-  // The app's own module list is the source of truth for what ZI CAB sells;
+  // The app's own module list is the source of truth for what Ferrido sells;
   // the CMS list is only a fallback for when it cannot be reached.
   const appModules = useAppModules();
   const serviceCards = appModules.length ? appModules : services;
@@ -160,15 +160,26 @@ const fallbackVehicles = [
 
 
 
+  // The three-step route under the hero. Static copy: it describes the product,
+  // not anything an admin edits.
+  const steps = [
+    { icon: MapPin, title: 'Set your pickup', desc: 'Pick a city ride, outstation trip or airport transfer and drop your pin.' },
+    { icon: ShieldCheck, title: 'Meet your captain', desc: 'A verified, police-checked driver is assigned and you track them live.' },
+    { icon: Smile, title: 'Arrive happy', desc: 'Sit back, ride easy, and pay the fare you were shown - no surprises.' },
+  ];
+
   return (
     <div className="home-page animate-fade-in" ref={pageRef}>
-      {/* HERO SECTION */}
-      <section className="hero-section grain-layer">
-        <div className="hero-backdrop-glow" data-parallax="-140" />
+      {/* HERO */}
+      <section className="hero-section">
+        <div className="hero-bg-blob" data-parallax="-120" />
         <div className="container hero-container">
-          {/* Left Content */}
           <div className="hero-left" data-hero-exit>
-            {/* each word gets a clipping mask so it can rise into view */}
+            <span className="hero-kicker">
+              <span className="kicker-dot" />
+              Now live in {launchCities.map((c) => c.name).join(' · ')}
+            </span>
+
             {/* Split per word so each keeps its own clipping mask and rise-in
                 animation; the copy itself comes from the CMS. */}
             <h1 className="hero-title">
@@ -176,7 +187,7 @@ const fallbackVehicles = [
                 <span className="hero-line" key={lineIndex}>
                   {String(line || '').split(/\s+/).filter(Boolean).map((word, wordIndex, words) => (
                     <span key={wordIndex}>
-                      <span className={lineIndex === 1 ? 'hero-word teal-text' : 'hero-word'}>{word}</span>
+                      <span className={lineIndex === 1 ? 'hero-word accent' : 'hero-word'}>{word}</span>
                       {wordIndex < words.length - 1 ? ' ' : null}
                     </span>
                   ))}
@@ -189,18 +200,17 @@ const fallbackVehicles = [
               <button className="btn btn-teal hero-btn-main" data-magnetic onClick={openBookingModal}>
                 {hero.primaryCta} <ArrowRight size={18} />
               </button>
-              <button className="btn btn-outline-light hero-btn-app" onClick={() => setActiveTab('contact')}>
+              <button className="btn btn-navy-outline" onClick={() => setActiveTab('contact')}>
                 <Smartphone size={18} /> {hero.secondaryCta}
               </button>
             </div>
 
-            {/* Trust Badges */}
             <div className="hero-trust-badges">
               {(hero.badges || []).map((badge, index) => {
                 const BadgeIcon = HERO_BADGE_ICONS[badge.icon] || ShieldCheck;
                 return (
                   <div className="badge-item" key={index}>
-                    <BadgeIcon size={16} color="#00BBA9" />
+                    <span className="badge-ico"><BadgeIcon size={14} /></span>
                     <span>{badge.label}</span>
                   </div>
                 );
@@ -208,132 +218,207 @@ const fallbackVehicles = [
             </div>
           </div>
 
-          {/* Right Ride Booking Card */}
-          <div className="hero-right">
-            <div className="booking-card">
-              {/* Tabs */}
-              <div className="booking-tabs">
-                {[
-                  { id: 'city', label: 'City Ride' },
-                  { id: 'outstation', label: 'Outstation' },
-                  { id: 'airport', label: 'Airport Transfer' },
-                ].map((t) => (
-                  <button
-                    key={t.id}
-                    className={`b-tab ${tab === t.id ? 'active' : ''}`}
-                    onClick={() => setTab(t.id)}
-                  >
-                    {t.label}
-                  </button>
-                ))}
+          {/* The logo's map pin, blown up and filled with the night-drive photo. */}
+          <div className="hero-right" aria-hidden="true">
+            <div className="pin-stage">
+              <div className="speed-lines">
+                <span /><span /><span />
+              </div>
+              <div className="hero-pin">
+                <div className="hero-pin-inner" />
+              </div>
+              <div className="pin-shadow" />
+              <div className="float-chip chip-top">
+                <span className="chip-ico"><Navigation size={16} /></span>
+                <div>
+                  <strong>Live tracking</strong>
+                  <span>Follow every turn</span>
+                </div>
+              </div>
+              <div className="float-chip chip-bottom">
+                <span className="chip-ico navy"><ShieldCheck size={16} /></span>
+                <div>
+                  <strong>Verified captains</strong>
+                  <span>Police-checked drivers</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Booking bar, docked across the bottom edge of the hero */}
+        <div className="container">
+          <div className="booking-card">
+            <div className="booking-tabs" role="tablist">
+              {[
+                { id: 'city', label: 'City Ride', icon: Car },
+                { id: 'outstation', label: 'Outstation', icon: Compass },
+                { id: 'airport', label: 'Airport', icon: Plane },
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === t.id}
+                  className={`b-tab ${tab === t.id ? 'active' : ''}`}
+                  onClick={() => setTab(t.id)}
+                >
+                  <t.icon size={15} /> {t.label}
+                </button>
+              ))}
+            </div>
+
+            <form onSubmit={handleSearchSubmit} className="booking-form">
+              <div className="field-group">
+                <label htmlFor="bk-pickup">Pickup</label>
+                <div className="field-input-wrap">
+                  <span className="field-dot pickup" />
+                  <input
+                    id="bk-pickup"
+                    type="text"
+                    placeholder="Where from?"
+                    value={pickup}
+                    onChange={(e) => setPickup(e.target.value)}
+                  />
+                </div>
               </div>
 
-              <form onSubmit={handleSearchSubmit} className="booking-form">
-                <div className="field-group">
-                  <label>Pickup Location</label>
-                  <div className="field-input-wrap">
-                    <input 
-                      type="text" 
-                      placeholder="Enter pickup location" 
-                      value={pickup}
-                      onChange={(e) => setPickup(e.target.value)}
-                    />
-                    <MapPin className="field-icon" size={16} color="#00BBA9" />
-                  </div>
+              <div className="field-group">
+                <label htmlFor="bk-drop">Drop</label>
+                <div className="field-input-wrap">
+                  <span className="field-dot drop" />
+                  <input
+                    id="bk-drop"
+                    type="text"
+                    placeholder="Where to?"
+                    value={drop}
+                    onChange={(e) => setDrop(e.target.value)}
+                  />
                 </div>
+              </div>
 
-                <div className="field-group">
-                  <label>Drop Location</label>
-                  <div className="field-input-wrap">
-                    <input 
-                      type="text" 
-                      placeholder="Enter drop location" 
-                      value={drop}
-                      onChange={(e) => setDrop(e.target.value)}
-                    />
-                    <MapPin className="field-icon" size={16} color="#00BBA9" />
-                  </div>
+              <div className="field-group">
+                <label htmlFor="bk-when">When</label>
+                <div className="field-input-wrap">
+                  <Clock size={15} className="field-lead" />
+                  <input
+                    id="bk-when"
+                    type="text"
+                    placeholder="Now"
+                    value={dateTime}
+                    onFocus={(e) => { e.target.type = 'datetime-local'; }}
+                    onChange={(e) => setDateTime(e.target.value)}
+                  />
                 </div>
+              </div>
 
-                <div className="field-row">
-                  <div className="field-group">
-                    <label>Date & Time</label>
-                    <div className="field-input-wrap">
-                      <input 
-                        type="text" 
-                        placeholder="Select Date & Time" 
-                        value={dateTime}
-                        onFocus={(e) => e.target.type = 'datetime-local'}
-                        onChange={(e) => setDateTime(e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="field-group">
-                    <label>Passengers</label>
-                    <div className="field-input-wrap">
-                      <select value={passengers} onChange={(e) => setPassengers(e.target.value)}>
-                        <option value="1 Passenger">1 Passenger</option>
-                        <option value="2 Passengers">2 Passengers</option>
-                        <option value="4 Passengers">4 Passengers</option>
-                        <option value="6 Passengers">6 Passengers</option>
-                      </select>
-                    </div>
-                  </div>
+              <div className="field-group">
+                <label htmlFor="bk-pax">Passengers</label>
+                <div className="field-input-wrap">
+                  <Users size={15} className="field-lead" />
+                  <select id="bk-pax" value={passengers} onChange={(e) => setPassengers(e.target.value)}>
+                    <option value="1 Passenger">1 Passenger</option>
+                    <option value="2 Passengers">2 Passengers</option>
+                    <option value="4 Passengers">4 Passengers</option>
+                    <option value="6 Passengers">6 Passengers</option>
+                  </select>
                 </div>
+              </div>
 
-                <button type="submit" className="btn btn-teal w-full booking-submit-btn">
-                  Find My Ride
-                </button>
-              </form>
-            </div>
+              <button type="submit" className="btn btn-teal booking-submit-btn">
+                Find My Ride <ArrowRight size={18} />
+              </button>
+            </form>
           </div>
         </div>
       </section>
 
-      {/* OUR SERVICES SECTION */}
+      {/* HOW IT WORKS */}
+      <section className="section-padding steps-section">
+        <div className="container">
+          <div className="center-head" data-reveal>
+            <span className="eyebrow center"><span className="eyebrow-num">01</span> How It Works</span>
+            <h2 className="section-title" data-reveal-mask><span>Three taps to <em>arrive happy</em></span></h2>
+          </div>
+
+          <div className="steps-grid" data-reveal-stagger>
+            {steps.map((s, i) => (
+              <div className="step-card" key={s.title}>
+                <div className="step-pin">
+                  <s.icon size={22} />
+                  <span className="step-num">{i + 1}</span>
+                </div>
+                <h3>{s.title}</h3>
+                <p>{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SERVICES */}
       <section className="section-padding services-section">
         <div className="container">
           <div className="section-title-group" data-reveal>
             <div>
-              <span className="eyebrow"><span className="eyebrow-num">01</span> What We Move</span>
-              <h2 className="section-title" data-reveal-mask><span>Our Services</span></h2>
+              <span className="eyebrow"><span className="eyebrow-num">02</span> What We Move</span>
+              <h2 className="section-title" data-reveal-mask><span>Rides for every plan</span></h2>
             </div>
+            <button className="section-link" onClick={() => setActiveTab('services')}>
+              All services <ChevronRight size={16} />
+            </button>
           </div>
 
           <div className="services-grid" data-reveal-stagger>
             {serviceCards.map((s) => {
               // Modules carry a real icon image; the CMS fallback carries a
               // lucide component instead.
-              const IconComp = typeof s.icon === 'function' ? s.icon : null;
+              const IconComp = s.icon && typeof s.icon !== 'string' ? s.icon : Car;
               return (
-                <div
+                <button
+                  type="button"
                   key={s.id}
                   className="service-card"
                   onClick={() => setActiveTab('services')}
                 >
-                  <div className="service-icon-wrapper">
+                  <span className="service-icon-wrapper">
                     {s.image ? (
-                      <img src={s.image} alt="" className="service-icon-img" loading="lazy" />
-                    ) : IconComp ? (
-                      <IconComp size={22} color="#0B1F3A" />
-                    ) : null}
-                  </div>
-                  <h3 className="service-card-title">{s.title}</h3>
-                  {s.desc && <p className="service-card-desc">{s.desc}</p>}
-                </div>
+                      <img
+                        src={s.image}
+                        alt=""
+                        className="service-icon-img"
+                        loading="lazy"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      />
+                    ) : (
+                      <IconComp size={22} />
+                    )}
+                  </span>
+                  <span className="service-text">
+                    <span className="service-card-title">{s.title}</span>
+                    {s.desc && <span className="service-card-desc">{s.desc}</span>}
+                  </span>
+                  <ArrowRight size={16} className="service-arrow" />
+                </button>
               );
             })}
           </div>
         </div>
       </section>
 
-      {/* WHY CHOOSE ZI CAB? SECTION */}
+      {/* WHY FERRIDO */}
       <section className="why-us-section grain-layer">
-        <div className="container">
-          <div className="why-head">
-            <span className="eyebrow"><span className="eyebrow-num">02</span> The Difference</span>
-            <h2 className="section-title light mb-10" data-reveal-mask><span>Why Choose ZI CAB?</span></h2>
+        <div className="container why-layout">
+          <div className="why-head" data-reveal>
+            <span className="eyebrow"><span className="eyebrow-num">03</span> The Difference</span>
+            <h2 className="section-title light" data-reveal-mask><span>Why riders choose Ferrido</span></h2>
+            <p className="why-lead">
+              A ride is only easy when everything around it is - the booking, the driver,
+              the price and the help when you need it.
+            </p>
+            <button className="btn btn-teal" onClick={openBookingModal}>
+              Book your first ride <ArrowRight size={18} />
+            </button>
           </div>
 
           <div className="why-us-grid" data-reveal-stagger>
@@ -342,12 +427,10 @@ const fallbackVehicles = [
               return (
                 <div key={idx} className="why-us-card">
                   <div className="why-icon-box">
-                    <IconComponent size={20} color="#00BBA9" />
+                    <IconComponent size={20} />
                   </div>
-                  <div className="why-content">
-                    <h4 className="why-title">{v.title}</h4>
-                    <p className="why-desc">{v.desc}</p>
-                  </div>
+                  <h4 className="why-title">{v.title}</h4>
+                  <p className="why-desc">{v.desc}</p>
                 </div>
               );
             })}
@@ -355,13 +438,13 @@ const fallbackVehicles = [
         </div>
       </section>
 
-      {/* POPULAR VEHICLES SECTION */}
+      {/* FLEET */}
       <section className="section-padding vehicles-section">
         <div className="container">
           <div className="section-title-group" data-reveal>
             <div>
-              <span className="eyebrow"><span className="eyebrow-num">03</span> The Fleet</span>
-              <h2 className="section-title" data-reveal-mask><span>Popular Vehicles</span></h2>
+              <span className="eyebrow"><span className="eyebrow-num">04</span> The Fleet</span>
+              <h2 className="section-title" data-reveal-mask><span>Pick your ride</span></h2>
             </div>
           </div>
 
@@ -370,58 +453,54 @@ const fallbackVehicles = [
               first began, so the loop has no visible seam and no end. */}
           <div className="vehicles-marquee">
             {[0, 1].map((pass) => (
-            <div className="vehicles-track" key={pass} aria-hidden={pass === 1}>
-            {vehicles.map((v, i) => (
-              <div key={i} className="vehicle-card" data-tilt>
-                <div className="vehicle-img-container" data-img-parallax>
-                  <img src={v.image} alt={v.name} className="vehicle-img" loading="lazy" />
-                  <span className="vehicle-type-badge">{v.type}</span>
-                </div>
-                <div className="vehicle-card-body">
-                  <h3 className="vehicle-name">{v.name}</h3>
-                  <div className="vehicle-specs">
-                    {v.seats && <span><Users size={14} /> {v.seats}</span>}
-                    {v.bags && <span><Briefcase size={14} /> {v.bags}</span>}
-                  </div>
-
-                  <div className="vehicle-price-row">
-                    {/* No price row at all when the vehicle has no configured
-                        rate — better than showing an empty or invented one. */}
-                    <div className="price-tag">
-                      {v.price ? (
-                        <>
-                          <span className="price-num">{v.price}</span>
-                          <span className="price-unit">{v.unit}</span>
-                        </>
-                      ) : null}
+              <div className="vehicles-track" key={pass} aria-hidden={pass === 1}>
+                {vehicles.map((v, i) => (
+                  <div key={i} className="vehicle-card" data-tilt>
+                    <div className="vehicle-img-container" data-img-parallax>
+                      <img src={v.image} alt={v.name} className="vehicle-img" loading="lazy" />
+                      <span className="vehicle-type-badge">{v.type}</span>
                     </div>
-                    <button 
-                      className="btn btn-outline-teal btn-sm"
-                      onClick={openBookingModal}
-                    >
-                      Book Now
-                    </button>
+                    <div className="vehicle-card-body">
+                      <h3 className="vehicle-name">{v.name}</h3>
+                      <div className="vehicle-specs">
+                        {v.seats && <span><Users size={14} /> {v.seats}</span>}
+                        {v.bags && <span><Briefcase size={14} /> {v.bags}</span>}
+                      </div>
+                      <div className="vehicle-price-row">
+                        {/* No price at all when the vehicle has no configured
+                            rate - better than an empty or invented one. */}
+                        <div className="price-tag">
+                          {v.price ? (
+                            <>
+                              <span className="price-num">{v.price}</span>
+                              <span className="price-unit">{v.unit}</span>
+                            </>
+                          ) : null}
+                        </div>
+                        <button className="vehicle-book" onClick={openBookingModal}>
+                          Book <ArrowRight size={14} />
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
-            ))}
-            </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* MEET OUR DRIVERS SECTION */}
-      <section className="section-padding drivers-section grain-layer">
+      {/* DRIVERS */}
+      <section className="section-padding drivers-section">
         <div className="container">
           <div className="section-title-group" data-reveal>
             <div>
-              <span className="eyebrow"><span className="eyebrow-num">04</span> Who Drives You</span>
-              <h2 className="section-title light" data-reveal-mask><span>Meet Our Drivers</span></h2>
-              <p className="section-sub">Every ZI CAB captain is background-verified, police-checked and rated by real riders.</p>
+              <span className="eyebrow"><span className="eyebrow-num">05</span> Who Drives You</span>
+              <h2 className="section-title" data-reveal-mask><span>Meet our captains</span></h2>
+              <p className="section-sub-dark">Every Ferrido captain is background-verified, police-checked and rated by real riders.</p>
             </div>
             <button className="section-link" onClick={() => setActiveTab('driver')}>
-              Become a Driver <ChevronRight size={16} />
+              Become a captain <ChevronRight size={16} />
             </button>
           </div>
 
@@ -446,15 +525,15 @@ const fallbackVehicles = [
                 <h3 className="driver-name">{d.name}</h3>
 
                 <div className="driver-rating">
-                  <Star size={14} color="#FBBF24" fill="#FBBF24" />
+                  <Star size={14} color="#F7941D" fill="#F7941D" />
                   <strong>{d.rating}</strong>
                   <span>· {d.trips}</span>
                 </div>
 
                 <div className="driver-meta">
-                  <div className="dm-row"><ShieldCheck size={14} color="#00BBA9" /> {d.experience}</div>
-                  <div className="dm-row"><Car size={14} color="#00BBA9" /> {d.vehicle}</div>
-                  <div className="dm-row"><MapPin size={14} color="#00BBA9" /> {d.city}</div>
+                  <div className="dm-row"><ShieldCheck size={14} /> {d.experience}</div>
+                  <div className="dm-row"><Car size={14} /> {d.vehicle}</div>
+                  <div className="dm-row"><MapPin size={14} /> {d.city}</div>
                 </div>
               </div>
             ))}
@@ -462,55 +541,39 @@ const fallbackVehicles = [
         </div>
       </section>
 
-      {/* OFFICE & LAUNCH CITIES */}
+      {/* CITIES */}
       <section className="section-padding cities-section">
         <div className="container">
           <div className="section-title-group" data-reveal>
             <div>
-              <span className="eyebrow"><span className="eyebrow-num">05</span> Coverage</span>
-              <h2 className="section-title" data-reveal-mask><span>Where You&apos;ll Find Us</span></h2>
+              <span className="eyebrow"><span className="eyebrow-num">06</span> Coverage</span>
+              <h2 className="section-title" data-reveal-mask><span>Where you&apos;ll find us</span></h2>
               <p className="section-sub-dark">{contact.addressShort}</p>
             </div>
             <a className="section-link" href={contact.mapsUrl} target="_blank" rel="noreferrer">
-              Get Directions <ChevronRight size={16} />
+              Get directions <ChevronRight size={16} />
             </a>
           </div>
 
           <div className="cities-grid" data-reveal-stagger>
             {launchCities.map((c) => (
               <div key={c.name} className="city-card">
-                <div className="city-icon"><MapPin size={20} color="#00BBA9" /></div>
-                <h3>{c.name}</h3>
-                <span>{c.note}</span>
+                <div className="city-pin"><MapPin size={18} /></div>
+                <div>
+                  <h3>{c.name}</h3>
+                  <span>{c.note}</span>
+                </div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ADVERTISE TEASER */}
-      <section className="advertise-teaser">
-        <div className="container advertise-teaser-inner" data-reveal>
-          <div>
-            <span className="at-tag"><Megaphone size={14} /> For Businesses</span>
-            <h2 className="at-title">Advertise with ZI CAB</h2>
-            <p className="at-desc">
-              Put your brand in front of thousands of daily riders — across our mobile app, website,
-              driver app, home banners, booking screens and push notifications.
-            </p>
-          </div>
-          <button className="btn btn-teal at-btn" onClick={() => setActiveTab('advertise')}>
-            Explore Ad Options <ArrowRight size={18} />
-          </button>
-        </div>
-      </section>
-
-      {/* TRUSTED BY & APP DOWNLOAD SECTION */}
+      {/* PARTNERS + ADVERTISE */}
       <section className="trusted-app-section">
         <div className="container">
-          {/* Trusted Logos */}
           <div className="trusted-block">
-            <h3 className="trusted-heading" data-reveal-mask><span>Trusted by Hotels, Airports &amp; Malls</span></h3>
+            <h3 className="trusted-heading" data-reveal-mask><span>Trusted by hotels, airports &amp; malls</span></h3>
             <div className="partners-marquee" data-marquee-velocity>
               {/* rendered twice so the track loops without a visible seam; the
                   copy is aria-hidden so screen readers do not repeat it */}
@@ -527,13 +590,28 @@ const fallbackVehicles = [
             </div>
           </div>
 
-          {/* App Download Banner */}
+          <div className="advertise-teaser" data-reveal>
+            <div>
+              <span className="at-tag"><Megaphone size={14} /> For Businesses</span>
+              <h2 className="at-title">Advertise with Ferrido</h2>
+              <p className="at-desc">
+                Put your brand in front of thousands of daily riders - across our apps, website,
+                home banners, booking screens and push notifications.
+              </p>
+            </div>
+            <button className="btn btn-navy" onClick={() => setActiveTab('advertise')}>
+              Explore ad options <ArrowRight size={18} />
+            </button>
+          </div>
+
+          {/* APP DOWNLOAD */}
           <div className="app-download-banner" data-reveal>
             <div className="app-banner-left">
-              <h2 className="app-banner-title">Download ZI CAB App</h2>
-              <p className="app-banner-desc">Book rides on the go, anytime, anywhere.</p>
+              <span className="eyebrow light-eyebrow">Get the app</span>
+              <h2 className="app-banner-title">Ride easy from your <em>pocket</em></h2>
+              <p className="app-banner-desc">{brand.appBlurb || 'Book rides on the go, anytime, anywhere.'}</p>
 
-              <div className="app-store-btns flex gap-4 mt-6">
+              <div className="app-store-btns">
                 {/* Falls back to the placeholder icon until a QR image is uploaded. */}
                 <div className="qr-box">
                   {brand.playStoreQr || brand.appStoreQr ? (
@@ -564,16 +642,15 @@ const fallbackVehicles = [
               </div>
             </div>
 
-            <div className="app-banner-right">
-              <div className="mockup-phone" data-parallax="-70">
+            <div className="app-banner-right" aria-hidden="true">
+              <div className="mockup-phone" data-parallax="-60">
                 <div className="mockup-screen">
-                  <div className="m-header">
-                    <span className="m-logo">ZI CAB</span>
-                  </div>
-                  <div className="m-body">
-                    <p className="m-tag">Your Ride. Our Priority.</p>
-                    <div className="m-btn">Book a Ride</div>
-                  </div>
+                  <img src={brand.logo} alt="" className="m-logo-img" />
+                  <span className="m-logo"><b>Fer</b>rido</span>
+                  <p className="m-tag">{brand.tagline}</p>
+                  <div className="m-field"><span className="field-dot pickup" /> Where from?</div>
+                  <div className="m-field"><span className="field-dot drop" /> Where to?</div>
+                  <div className="m-btn">Book a Ride</div>
                 </div>
               </div>
             </div>
@@ -582,388 +659,464 @@ const fallbackVehicles = [
       </section>
 
       <style>{`
-        .zicab-landing {
-          /* HERO STYLES */
-          .hero-section {
-            background: #07152B url('/carbackground.png') no-repeat 88% center;
-            background-size: cover;
-            position: relative;
-            padding: 60px 0 80px;
-            overflow: hidden;
+        .zicab-landing .home-page {
+          --fr-navy: #0B1F3A;
+          --fr-navy-2: #12305A;
+          --fr-orange: #F7941D;
+          --fr-orange-2: #EE6F12;
+          --fr-cream: #FFF8F0;
+          --fr-line: #EEE3D6;
+          background: #FFFFFF;
+
+          em { font-style: normal; color: var(--fr-orange); }
+
+          .btn-navy {
+            background: var(--fr-navy);
             color: #FFFFFF;
+            box-shadow: 0 10px 24px rgba(11, 31, 58, 0.22);
+          }
+          .btn-navy:hover { background: var(--fr-navy-2); transform: translateY(-2px); }
+
+          .btn-navy-outline {
+            background: #FFFFFF;
+            color: var(--fr-navy);
+            border: 1.5px solid rgba(11, 31, 58, 0.14);
+            box-shadow: 0 4px 14px rgba(11, 31, 58, 0.06);
+          }
+          .btn-navy-outline:hover { border-color: var(--fr-orange); color: var(--fr-orange-2); transform: translateY(-2px); }
+
+          .eyebrow.center { justify-content: center; }
+          .eyebrow.center::before {
+            content: '';
+            flex: 0 1 60px;
+            height: 1px;
+            background: linear-gradient(270deg, var(--fr-orange), transparent);
           }
 
-          .hero-backdrop-glow {
+          /* ---------- HERO ---------- */
+          .hero-section {
+            position: relative;
+            overflow: hidden;
+            padding: clamp(40px, 6vw, 84px) 0 56px;
+            background:
+              radial-gradient(60% 70% at 85% 30%, rgba(247, 148, 29, 0.16), transparent 70%),
+              radial-gradient(50% 60% at 0% 100%, rgba(11, 31, 58, 0.06), transparent 70%),
+              var(--fr-cream);
+          }
+
+          .hero-bg-blob {
             position: absolute;
-            top: -20%;
-            left: 30%;
-            width: min(500px, 70vw);
-            height: min(500px, 70vw);
-            background: radial-gradient(circle, rgba(0, 187, 169, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+            right: -12%;
+            top: -18%;
+            width: min(720px, 80vw);
+            aspect-ratio: 1;
+            border-radius: 50%;
+            border: 1px dashed rgba(247, 148, 29, 0.35);
             pointer-events: none;
-            z-index: 1;
           }
 
           .hero-container {
             display: grid;
-            grid-template-columns: 1.25fr 0.75fr;
-            gap: 20px;
+            grid-template-columns: 1.05fr 0.95fr;
             align-items: center;
-            position: relative;
-            z-index: 2;
+            gap: 40px;
+          }
+
+          .hero-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 7px 14px 7px 10px;
+            border-radius: 999px;
+            background: #FFFFFF;
+            border: 1px solid var(--fr-line);
+            box-shadow: 0 4px 14px rgba(11, 31, 58, 0.05);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--fr-navy);
+            margin-bottom: 22px;
+          }
+          .kicker-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--fr-orange);
+            box-shadow: 0 0 0 4px rgba(247, 148, 29, 0.2);
           }
 
           .hero-title {
-            font-size: 52px;
+            font-family: var(--font-display) !important;
+            font-size: clamp(2.6rem, 1.6rem + 4vw, 5rem);
+            line-height: 1.02;
             font-weight: 800;
-            line-height: 1.1;
-            margin-bottom: 18px;
-            letter-spacing: -1px;
+            font-style: italic;
+            letter-spacing: -0.035em;
+            color: var(--fr-navy);
+            margin: 0 0 20px;
           }
-
-          /* Clipping mask per line: the words sit inside it and translate up from
-             below, so they appear to rise out of the line rather than just fade. */
-          .hero-line {
-            display: block;
-            overflow: hidden;
-            padding-bottom: 0.06em;
-          }
-
-          .hero-word {
-            display: inline-block;
-            will-change: transform;
-          }
-
-          .teal-text {
-            color: #00BBA9;
-          }
+          .hero-title * { font-family: var(--font-display) !important; }
+          .hero-line { display: block; overflow: hidden; padding-bottom: 0.06em; }
+          .hero-word { display: inline-block; }
+          /* Solid, not gradient text: the entrance splits each word into per-letter
+             spans, and background-clip: text does not paint through those. */
+          .hero-word.accent { color: var(--fr-orange); padding-right: 0.08em; }
 
           .hero-subtitle {
-            font-size: 16.5px;
-            color: #CBD5E1;
-            line-height: 1.6;
-            max-width: 500px;
+            font-size: clamp(1rem, 0.92rem + 0.35vw, 1.18rem);
+            color: #475569;
+            max-width: 520px;
+            line-height: 1.65;
             margin-bottom: 30px;
           }
 
-          .hero-cta-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
-            margin-bottom: 40px;
-          }
+          .hero-cta-group { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 30px; }
+          .hero-btn-main { padding: 15px 30px; }
 
-          .hero-btn-main {
-            padding: 15px 32px;
-            font-size: 16px;
-          }
-
-          .hero-btn-app {
-            padding: 15px 26px;
-            font-size: 15px;
-          }
-
-          .hero-trust-badges {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            padding-top: 24px;
-          }
-
+          .hero-trust-badges { display: flex; flex-wrap: wrap; gap: 10px 22px; }
           .badge-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13.5px;
-            color: #E2E8F0;
-            font-weight: 500;
+            display: inline-flex; align-items: center; gap: 8px;
+            font-size: 13.5px; font-weight: 600; color: var(--fr-navy);
+          }
+          .badge-ico {
+            display: grid; place-items: center;
+            width: 26px; height: 26px; border-radius: 8px;
+            background: rgba(247, 148, 29, 0.14);
+            color: var(--fr-orange-2);
           }
 
-          .hero-right {
-            display: flex;
-            justify-content: flex-end;
+          /* Pin visual */
+          .hero-right { display: flex; justify-content: center; }
+          .pin-stage {
+            position: relative;
+            width: min(440px, 100%);
+            aspect-ratio: 1 / 1.08;
           }
-
-          /* BOOKING CARD */
-          /* Frosted glass over the hero photo rather than an opaque navy block --
-             the backdrop blur is what makes it read as a floating panel. */
-          .booking-card {
-            background: linear-gradient(165deg, rgba(18, 38, 66, 0.82), rgba(8, 20, 38, 0.9));
-            backdrop-filter: blur(18px) saturate(140%);
-            -webkit-backdrop-filter: blur(18px) saturate(140%);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: var(--radius-lg);
-            padding: 20px 22px;
-            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), var(--hairline-dark),
-              0 0 0 1px rgba(0, 187, 169, 0.12);
-            max-width: 420px;
+          .hero-pin {
+            position: absolute;
+            left: 50%;
+            top: 4%;
+            width: 74%;
+            aspect-ratio: 1;
+            transform: translateX(-50%) rotate(-45deg);
+            border-radius: 50% 50% 50% 0;
+            background: linear-gradient(135deg, var(--fr-navy-2), var(--fr-navy));
+            padding: 14px;
+            box-shadow: 0 30px 60px rgba(11, 31, 58, 0.28);
+          }
+          .hero-pin::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            border: 3px solid var(--fr-orange);
+            clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
+            transform: rotate(45deg) scale(1.06);
+            opacity: 0.9;
+          }
+          .hero-pin-inner {
             width: 100%;
+            height: 100%;
+            border-radius: inherit;
+            overflow: hidden;
+            background: #07152B url('/carbackground.png') no-repeat;
+            background-size: 175%;
+            background-position: 78% 60%;
           }
-
-          .booking-tabs {
+          .pin-shadow {
+            position: absolute;
+            left: 50%;
+            bottom: 3%;
+            width: 34%;
+            height: 18px;
+            transform: translateX(-50%);
+            border-radius: 50%;
+            background: radial-gradient(closest-side, rgba(11, 31, 58, 0.28), transparent);
+          }
+          .speed-lines {
+            position: absolute;
+            left: 0;
+            top: 44%;
             display: flex;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            padding: 3px;
-            gap: 3px;
-            margin-bottom: 14px;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 4;
           }
+          .speed-lines span {
+            display: block;
+            height: 7px;
+            border-radius: 99px;
+            background: linear-gradient(90deg, rgba(247, 148, 29, 0.15), var(--fr-orange));
+            animation: fr-speed 2.4s var(--ease-out) infinite;
+          }
+          .speed-lines span:nth-child(1) { width: 110px; }
+          .speed-lines span:nth-child(2) { width: 150px; animation-delay: 0.15s; }
+          .speed-lines span:nth-child(3) { width: 90px; animation-delay: 0.3s; }
 
+          .float-chip {
+            position: absolute;
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 16px 10px 10px;
+            background: rgba(255, 255, 255, 0.96);
+            border: 1px solid var(--fr-line);
+            border-radius: 16px;
+            box-shadow: 0 16px 34px rgba(11, 31, 58, 0.14);
+            z-index: 3;
+            animation: fr-float 5s ease-in-out infinite;
+          }
+          .float-chip strong { display: block; font-size: 13.5px; color: var(--fr-navy); }
+          .float-chip span { font-size: 12px; color: #64748B; }
+          .chip-top { right: -2%; top: 10%; }
+          .chip-bottom { left: 2%; bottom: 14%; animation-delay: -2.5s; }
+          .chip-ico {
+            display: grid; place-items: center;
+            width: 34px; height: 34px; border-radius: 11px;
+            background: var(--fr-orange); color: #FFFFFF !important;
+          }
+          .chip-ico.navy { background: var(--fr-navy); }
+
+          /* Booking bar */
+          .booking-card {
+            position: relative;
+            margin-top: clamp(28px, 4vw, 48px);
+            background: #FFFFFF;
+            border-radius: 24px;
+            padding: 10px 10px 12px;
+            border: 1px solid var(--fr-line);
+            box-shadow: 0 30px 70px rgba(11, 31, 58, 0.12), 0 4px 12px rgba(11, 31, 58, 0.05);
+          }
+          .booking-tabs { display: flex; gap: 6px; padding: 4px 6px 10px; }
           .b-tab {
-            flex: 1;
-            background: none;
-            border: none;
-            color: #94A3B8;
-            padding: 7px 4px;
-            font-size: 12.5px;
-            font-weight: 500;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s;
+            display: inline-flex; align-items: center; gap: 7px;
+            border: none; cursor: pointer;
+            padding: 9px 16px;
+            border-radius: 12px;
+            background: transparent;
+            color: #64748B;
+            font-weight: 600; font-size: 14px;
+            transition: var(--transition);
           }
-
-          .b-tab.active {
-            background-color: #00BBA9;
-            color: #FFFFFF;
-            font-weight: 600;
-          }
+          .b-tab:hover { color: var(--fr-navy); background: #F6F1EA; }
+          .b-tab.active { background: var(--fr-navy); color: #FFFFFF; }
 
           .booking-form {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-          }
-
-          .field-group {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-          }
-
-          .field-group label {
-            font-size: 11.5px;
-            color: #94A3B8;
-            font-weight: 500;
-          }
-
-          .field-input-wrap {
-            position: relative;
-            display: flex;
-            align-items: center;
-          }
-
-          .field-input-wrap input, .field-input-wrap select {
-            width: 100%;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 7px;
-            padding: 9px 12px;
-            color: #FFFFFF;
-            font-size: 13px;
-            outline: none;
-          }
-
-          .field-input-wrap input:focus, .field-input-wrap select:focus {
-            border-color: #00BBA9;
-          }
-
-          .field-icon {
-            position: absolute;
-            right: 12px;
-            pointer-events: none;
-          }
-
-          .field-row {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            grid-template-columns: 1.3fr 1.3fr 1fr 1fr auto;
+            gap: 8px;
+            align-items: stretch;
           }
-
-          .booking-submit-btn {
-            margin-top: 6px;
-            padding: 13px;
-            font-size: 14.5px;
+          .field-group {
+            background: #F8F5F1;
+            border-radius: 16px;
+            padding: 10px 14px;
+            border: 1.5px solid transparent;
+            transition: var(--transition);
           }
-
-          /* SERVICES GRID */
-          .services-section {
-            background: var(--bg-white);
+          .field-group:focus-within { border-color: var(--fr-orange); background: #FFFFFF; }
+          .field-group label {
+            display: block;
+            font-size: 11px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.08em;
+            color: #94A3B8;
+            margin-bottom: 4px;
           }
+          .field-input-wrap { display: flex; align-items: center; gap: 10px; }
+          .field-input-wrap input,
+          .field-input-wrap select {
+            width: 100%;
+            border: none; outline: none; background: transparent;
+            font-size: 15px; font-weight: 600; color: var(--fr-navy);
+            padding: 0; min-width: 0;
+          }
+          .field-input-wrap input::placeholder { color: #A3AEC0; font-weight: 500; }
+          .field-lead { color: var(--fr-orange-2); flex-shrink: 0; }
+          .field-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+          .field-dot.pickup { background: var(--fr-orange); box-shadow: 0 0 0 3px rgba(247, 148, 29, 0.22); }
+          .field-dot.drop { background: var(--fr-navy); border-radius: 3px; }
+          .booking-submit-btn { border-radius: 16px; padding: 0 26px; min-height: 58px; }
 
+          /* ---------- HOW IT WORKS ---------- */
+          .steps-section { background: #FFFFFF; }
+          .center-head { text-align: center; margin-bottom: 44px; }
+          .steps-grid {
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+          }
+          /* the dashed route that links the three pins */
+          .steps-grid::before {
+            content: '';
+            position: absolute;
+            top: 34px;
+            left: 16%;
+            right: 16%;
+            border-top: 2px dashed rgba(247, 148, 29, 0.45);
+          }
+          .step-card { position: relative; text-align: center; padding: 0 12px; }
+          .step-pin {
+            position: relative;
+            width: 68px; height: 68px;
+            margin: 0 auto 20px;
+            display: grid; place-items: center;
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            background: var(--fr-navy);
+            color: #FFFFFF;
+            box-shadow: 0 14px 28px rgba(11, 31, 58, 0.22);
+          }
+          .step-pin > svg { transform: rotate(45deg); }
+          .step-card:nth-child(2) .step-pin { background: var(--fr-orange); box-shadow: 0 14px 28px rgba(247, 148, 29, 0.32); }
+          .step-num {
+            position: absolute;
+            top: -6px; right: -6px;
+            transform: rotate(45deg);
+            width: 24px; height: 24px; border-radius: 50%;
+            display: grid; place-items: center;
+            background: #FFFFFF; color: var(--fr-navy);
+            font-size: 12px; font-weight: 800;
+            box-shadow: 0 4px 10px rgba(11, 31, 58, 0.15);
+          }
+          .step-card h3 { font-size: 19px; font-weight: 700; color: var(--fr-navy); margin-bottom: 8px; }
+          .step-card p { font-size: 14.5px; color: #64748B; line-height: 1.6; max-width: 300px; margin: 0 auto; }
+
+          /* ---------- SERVICES ---------- */
+          .services-section { background: var(--fr-cream); }
           .services-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 12px;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 14px;
           }
-
-          .service-icon-img {
-            width: 26px;
-            height: 26px;
-            object-fit: contain;
-          }
-
-          .service-card-desc {
-            margin-top: 4px;
-            font-size: 12px;
-            line-height: 1.4;
-            color: #64748B;
-            text-align: center;
-          }
-
           .service-card {
-            background: var(--bg-raised);
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-md);
-            box-shadow: var(--shadow-sm), var(--hairline);
-            padding: 18px 8px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
+            display: flex; align-items: center; gap: 14px;
+            text-align: left;
+            width: 100%;
+            padding: 16px;
+            background: #FFFFFF;
+            border: 1px solid var(--fr-line);
+            border-radius: 18px;
             cursor: pointer;
             transition: var(--transition);
           }
-
           .service-card:hover {
-            border-color: rgba(0, 187, 169, 0.5);
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-md), 0 10px 26px rgba(0, 187, 169, 0.16), var(--hairline);
+            transform: translateY(-3px);
+            border-color: rgba(247, 148, 29, 0.55);
+            box-shadow: 0 16px 34px rgba(11, 31, 58, 0.08);
           }
-
-          .service-card:hover .service-icon-wrapper {
-            background: linear-gradient(160deg, #14CDBA, #009C8D);
-            transform: scale(1.06);
-          }
-
-          .service-card:hover .service-icon-wrapper svg {
-            stroke: #FFFFFF;
-          }
-
           .service-icon-wrapper {
-            width: 46px;
-            height: 46px;
-            background: linear-gradient(160deg, #E9FAF8, #D3F2EE);
-            box-shadow: inset 0 0 0 1px rgba(0, 187, 169, 0.16);
-            transition: var(--transition);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 10px;
-          }
-
-          .service-card-title {
-            font-size: 13px;
-            font-weight: 600;
-            color: #0F172A;
-            line-height: 1.25;
-          }
-
-          /* WHY US SECTION */
-          .why-us-section {
-            color: #FFFFFF;
-            padding: clamp(44px, 5vw, 68px) 0 clamp(52px, 6vw, 74px);
-            background-color: var(--navy-deep);
-            background-image:
-              radial-gradient(70% 120% at 0% 0%, rgba(0, 187, 169, 0.18), transparent 55%),
-              radial-gradient(60% 100% at 100% 100%, rgba(43, 92, 168, 0.22), transparent 55%),
-              linear-gradient(150deg, #0A1D36, #071228);
-          }
-
-          .mb-10 {
-            margin-bottom: 30px;
-          }
-
-          .why-us-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 20px;
-          }
-
-          .why-us-card {
-            display: flex;
-            flex-direction: row;
-            align-items: flex-start;
-            gap: 12px;
-          }
-
-          .why-icon-box {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: rgba(0, 187, 169, 0.12);
-            border: 1px solid rgba(0, 187, 169, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
             flex-shrink: 0;
+            width: 50px; height: 50px;
+            display: grid; place-items: center;
+            border-radius: 14px;
+            background: linear-gradient(135deg, rgba(247, 148, 29, 0.18), rgba(247, 148, 29, 0.06));
+            color: var(--fr-orange-2);
           }
+          .service-icon-img { width: 34px; height: 34px; object-fit: contain; }
+          .service-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+          .service-card-title { font-size: 15.5px; font-weight: 700; color: var(--fr-navy); }
+          .service-card-desc { font-size: 13px; color: #64748B; line-height: 1.45; }
+          .service-arrow { color: #CBD5E1; flex-shrink: 0; transition: var(--transition); }
+          .service-card:hover .service-arrow { color: var(--fr-orange); transform: translateX(3px); }
 
-          .why-title {
-            font-size: 14px;
-            font-weight: 700;
-            color: #FFFFFF;
-            line-height: 1.3;
-            margin-bottom: 4px;
-          }
-
-          .why-desc {
-            font-size: 12px;
-            color: #94A3B8;
-            line-height: 1.45;
-          }
-
-          /* VEHICLES GRID */
-          .vehicles-section {
+          /* ---------- WHY ---------- */
+          .why-us-section {
+            position: relative;
+            padding: clamp(56px, 7vw, 100px) 0;
             background:
-              radial-gradient(80% 60% at 100% 0%, rgba(0, 187, 169, 0.07), transparent 60%),
-              var(--bg-light);
+              radial-gradient(50% 80% at 100% 0%, rgba(247, 148, 29, 0.18), transparent 60%),
+              linear-gradient(160deg, #0E2748 0%, var(--fr-navy) 60%, #081830 100%);
+            color: #FFFFFF;
           }
+          .why-layout {
+            display: grid;
+            grid-template-columns: 0.85fr 1.15fr;
+            gap: clamp(32px, 5vw, 72px);
+            align-items: center;
+          }
+          .why-lead { color: #A9B6C9; font-size: 16px; line-height: 1.7; margin: 14px 0 28px; max-width: 440px; }
+          .why-us-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+          .why-us-card {
+            padding: 22px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            transition: var(--transition);
+          }
+          .why-us-card:hover { background: rgba(255, 255, 255, 0.08); border-color: rgba(247, 148, 29, 0.5); }
+          .why-icon-box {
+            width: 44px; height: 44px; border-radius: 13px;
+            display: grid; place-items: center;
+            background: var(--fr-orange); color: #FFFFFF;
+            margin-bottom: 16px;
+            box-shadow: 0 10px 22px rgba(247, 148, 29, 0.3);
+          }
+          .why-title { font-size: 16.5px; font-weight: 700; color: #FFFFFF; margin-bottom: 6px; }
+          .why-desc { font-size: 14px; color: #A9B6C9; line-height: 1.6; }
 
-          /* Continuous, endless marquee — same approach as the partner strip.
-             The catalog outgrew a single screen (eighteen vehicles five-across
-             stacked into four rows), and a scroll-snap rail only stepped a card
-             at a time and stopped at the end. */
+          /* ---------- FLEET ---------- */
+          .vehicles-section { background: #FFFFFF; }
+          /* Continuous marquee; see the comment on the markup. */
           .vehicles-marquee {
             display: flex;
-            --marquee-gap: 20px;
+            --marquee-gap: 18px;
             gap: var(--marquee-gap);
             overflow: hidden;
+            padding: 6px 0 14px;
             mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent);
             -webkit-mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent);
           }
-
           .vehicles-track {
             display: flex;
             gap: var(--marquee-gap);
             flex-shrink: 0;
             animation: zc-marqueeScroll 42s linear infinite;
           }
+          .vehicles-marquee:hover .vehicles-track { animation-play-state: paused; }
+          .vehicles-track > .vehicle-card { flex: 0 0 262px; }
 
-          .vehicles-marquee:hover .vehicles-track {
-            animation-play-state: paused;
+          .vehicle-card {
+            background: #FFFFFF;
+            border: 1px solid var(--fr-line);
+            border-radius: 22px;
+            overflow: hidden;
+            transition: box-shadow 0.25s ease, border-color 0.25s ease;
           }
-
-          .vehicles-track > .vehicle-card {
-            flex: 0 0 246px;
+          .vehicle-card:hover { border-color: rgba(247, 148, 29, 0.5); box-shadow: 0 18px 40px rgba(11, 31, 58, 0.1); }
+          .vehicle-img-container { position: relative; height: 160px; overflow: hidden; background: #F3EEE7; }
+          .vehicle-img { width: 100%; height: 100%; object-fit: cover; }
+          .vehicle-type-badge {
+            position: absolute; left: 12px; top: 12px;
+            padding: 5px 11px; border-radius: 999px;
+            background: rgba(11, 31, 58, 0.85); color: #FFFFFF;
+            font-size: 11.5px; font-weight: 600;
+            backdrop-filter: blur(6px);
           }
+          .vehicle-card-body { padding: 16px 18px 18px; }
+          .vehicle-name { font-size: 16.5px; font-weight: 700; color: var(--fr-navy); margin-bottom: 8px; }
+          .vehicle-specs { display: flex; gap: 14px; font-size: 13px; color: #64748B; margin-bottom: 14px; }
+          .vehicle-specs span { display: inline-flex; align-items: center; gap: 5px; }
+          .vehicle-price-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding-top: 14px; border-top: 1px dashed var(--fr-line);
+          }
+          .price-num { font-size: 22px; font-weight: 800; color: var(--fr-navy); }
+          .price-unit { font-size: 13px; color: #94A3B8; margin-left: 2px; }
+          .vehicle-book {
+            display: inline-flex; align-items: center; gap: 6px;
+            border: none; cursor: pointer;
+            padding: 9px 16px; border-radius: 999px;
+            background: rgba(247, 148, 29, 0.14);
+            color: var(--fr-orange-2);
+            font-weight: 700; font-size: 13.5px;
+            transition: var(--transition);
+          }
+          .vehicle-book:hover { background: var(--fr-orange); color: #FFFFFF; }
 
           @media (prefers-reduced-motion: reduce) {
-            .vehicles-track {
-              animation: none;
-            }
-            .vehicles-marquee {
-              overflow-x: auto;
-            }
+            .vehicles-track { animation: none; }
+            .vehicles-marquee { overflow-x: auto; }
+            .speed-lines span, .float-chip { animation: none; }
           }
 
-          /* On a touch screen a moving row is the wrong trade: you cannot swipe
-             an overflow:hidden marquee, and Book Now becomes a target that
-             slides out from under your thumb. Touch devices get a swipeable
-             snap rail instead, and the duplicate track is dropped since there is
-             nothing to loop. Pointer devices keep the continuous marquee. */
+          /* Touch screens get a swipeable snap rail instead of a moving row:
+             an overflow:hidden marquee cannot be swiped. */
           @media (hover: none), (max-width: 768px) {
             .vehicles-marquee {
               overflow-x: auto;
@@ -972,728 +1125,254 @@ const fallbackVehicles = [
               scrollbar-width: none;
               mask-image: none;
               -webkit-mask-image: none;
-              /* bleed to the gutter so the next card peeks in and the row reads
-                 as swipeable without a hint label */
               margin: 0 -16px;
               padding: 2px 16px 12px;
             }
-
-            .vehicles-marquee::-webkit-scrollbar {
-              display: none;
-            }
-
-            .vehicles-track {
-              animation: none;
-            }
-
-            .vehicles-track[aria-hidden='true'] {
-              display: none;
-            }
-
-            .vehicles-track > .vehicle-card {
-              scroll-snap-align: start;
-              flex-basis: 72vw;
-              max-width: 260px;
-            }
+            .vehicles-marquee::-webkit-scrollbar { display: none; }
+            .vehicles-track { animation: none; }
+            .vehicles-track[aria-hidden='true'] { display: none; }
+            .vehicles-track > .vehicle-card { scroll-snap-align: start; flex-basis: 72vw; max-width: 262px; }
           }
 
-          .vehicle-card {
-            background: var(--bg-raised);
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            transition: transform 0.35s var(--ease-out), box-shadow 0.35s var(--ease-out),
-              border-color 0.35s ease;
-            box-shadow: var(--shadow-sm), var(--hairline);
-          }
-
-          .vehicle-card:hover {
-            transform: translateY(-6px);
-            box-shadow: var(--shadow-lg), var(--hairline);
-            border-color: rgba(0, 187, 169, 0.45);
-          }
-
-          .vehicle-img-container {
-            height: 150px;
-            background: #FFFFFF;
-            overflow: hidden;
-          }
-
-          .vehicle-img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-          }
-
-          .vehicle-card-body {
-            padding: 18px;
-          }
-
-          .vehicle-name {
-            font-size: 18px;
-            font-weight: 700;
-            color: #0F172A;
-            margin-bottom: 8px;
-          }
-
-          .vehicle-specs {
-            display: flex;
-            gap: 16px;
-            font-size: 12.5px;
-            color: #64748B;
-            margin-bottom: 16px;
-          }
-
-          .vehicle-specs span {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-          }
-
-          .vehicle-price-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-top: 1px solid #F1F5F9;
-            padding-top: 14px;
-          }
-
-          .price-num {
-            font-size: 20px;
-            font-weight: 800;
-            color: #0F172A;
-          }
-
-          .price-unit {
-            font-size: 12px;
-            color: #64748B;
-          }
-
-          .btn-outline-teal {
-            background: linear-gradient(180deg, #EEFBF9, #DFF6F3);
-            color: var(--teal-ink);
-            border: 1px solid rgba(0, 187, 169, 0.45);
-            box-shadow: var(--hairline);
-            border-radius: var(--radius-full);
-            font-size: 13px;
-            font-weight: 600;
-            padding: 6px 14px;
-            cursor: pointer;
-            transition: all 0.2s;
-          }
-
-          .btn-outline-teal:hover {
-            background: #00BBA9;
-            color: #FFFFFF;
-          }
-
-          .vehicle-img-container {
-            position: relative;
-          }
-
-          .vehicle-type-badge {
-            position: absolute;
-            top: 12px;
-            left: 12px;
-            background: rgba(7, 21, 43, 0.85);
-            color: #00BBA9;
-            font-size: 11px;
-            font-weight: 600;
-            padding: 4px 10px;
-            border-radius: 20px;
-            border: 1px solid rgba(0, 187, 169, 0.4);
-          }
-
-          /* DRIVER PROFILES */
-          .drivers-section {
-            background-color: var(--navy-deep);
-            background-image:
-              radial-gradient(60% 90% at 85% 0%, rgba(0, 187, 169, 0.16), transparent 58%),
-              linear-gradient(150deg, #071528 0%, #0B1F3A 100%);
-          }
-
-          .section-sub {
-            font-size: 14px;
-            color: #94A3B8;
-            margin-top: 6px;
-            max-width: 560px;
-          }
-
-          .section-sub-dark {
-            font-size: 14px;
-            color: #64748B;
-            margin-top: 6px;
-          }
-
-          .drivers-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 22px;
-          }
-
+          /* ---------- DRIVERS ---------- */
+          .drivers-section { background: var(--fr-cream); }
+          .section-sub-dark { color: #64748B; font-size: 15px; margin-top: 8px; max-width: 560px; }
+          .drivers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
           .driver-card {
-            background: linear-gradient(165deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.03));
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.11);
-            border-radius: var(--radius-lg);
-            padding: 22px;
-            color: #FFFFFF;
-            box-shadow: var(--hairline-dark);
-            transition: transform 0.35s var(--ease-out), box-shadow 0.35s var(--ease-out),
-              border-color 0.35s ease;
+            background: #FFFFFF;
+            border: 1px solid var(--fr-line);
+            border-radius: 22px;
+            padding: 20px;
           }
-
-          .driver-card:hover {
-            border-color: #00BBA9;
-            transform: translateY(-5px);
-            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.35);
-          }
-
-          .driver-top {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            margin-bottom: 14px;
-          }
-
+          .driver-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
           .driver-photo {
-            width: 68px;
-            height: 68px;
-            border-radius: 50%;
-            border: 2px solid #00BBA9;
-            font-size: 22px;
+            position: relative;
+            width: 58px; height: 58px; border-radius: 18px;
+            display: grid; place-items: center;
+            background: var(--fr-navy); color: #FFFFFF;
+            font-weight: 700; overflow: hidden;
           }
-
+          .driver-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
           .driver-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 10.5px;
-            font-weight: 700;
-            padding: 4px 9px;
-            border-radius: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            color: #CBD5E1;
-            border: 1px solid rgba(255, 255, 255, 0.18);
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 5px 10px; border-radius: 999px;
+            background: #EEF2F7; color: var(--fr-navy);
+            font-size: 11.5px; font-weight: 700;
           }
+          .driver-badge.top { background: rgba(247, 148, 29, 0.16); color: #B85A06; }
+          .driver-name { font-size: 17px; font-weight: 700; color: var(--fr-navy); margin-bottom: 4px; }
+          .driver-rating { display: flex; align-items: center; gap: 5px; font-size: 13.5px; color: #64748B; margin-bottom: 14px; }
+          .driver-rating strong { color: var(--fr-navy); }
+          .driver-meta { display: grid; gap: 7px; padding-top: 14px; border-top: 1px dashed var(--fr-line); }
+          .dm-row { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: #475569; }
+          .dm-row svg { color: var(--fr-orange-2); }
 
-          .driver-badge.top {
-            background: rgba(0, 187, 169, 0.15);
-            color: #00BBA9;
-            border-color: rgba(0, 187, 169, 0.45);
-          }
-
-          .driver-name {
-            font-size: 16.5px;
-            font-weight: 700;
-            margin-bottom: 5px;
-          }
-
-          .driver-rating {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 13px;
-            color: #94A3B8;
-            margin-bottom: 14px;
-          }
-
-          .driver-rating strong {
-            color: #FFFFFF;
-          }
-
-          .driver-meta {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            padding-top: 14px;
-          }
-
-          .dm-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-            color: #CBD5E1;
-            line-height: 1.4;
-          }
-
-          /* LAUNCH CITIES */
-          .cities-section {
-            background: var(--bg-white);
-          }
-
-          .cities-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 22px;
-          }
-
+          /* ---------- CITIES ---------- */
+          .cities-section { background: #FFFFFF; }
+          .cities-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
           .city-card {
-            background: var(--bg-raised);
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-lg);
-            padding: 26px 22px;
-            box-shadow: var(--shadow-sm), var(--hairline);
-            transition: var(--transition);
+            display: flex; align-items: center; gap: 14px;
+            padding: 18px;
+            border-radius: 18px;
+            border: 1px solid var(--fr-line);
+            background: linear-gradient(135deg, #FFFFFF, var(--fr-cream));
           }
-
-          .city-card:hover {
-            border-color: rgba(0, 187, 169, 0.45);
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-md), 0 12px 28px rgba(0, 187, 169, 0.14), var(--hairline);
-          }
-
-          .city-icon {
-            width: 44px;
-            height: 44px;
-            background: #E6F8F6;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 14px;
-          }
-
-          .city-card h3 {
-            font-size: 19px;
-            font-weight: 700;
-            color: #0F172A;
-            margin-bottom: 4px;
-          }
-
-          .city-card span {
-            font-size: 13px;
-            color: #64748B;
-          }
-
-          /* ADVERTISE TEASER */
-          .advertise-teaser {
-            background: #0B1F3A;
-            padding: 44px 0;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-          }
-
-          .advertise-teaser-inner {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 30px;
-            color: #FFFFFF;
-          }
-
-          .at-tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 11.5px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #00BBA9;
-            background: rgba(0, 187, 169, 0.12);
-            padding: 4px 12px;
-            border-radius: 20px;
-            margin-bottom: 10px;
-          }
-
-          .at-title {
-            font-size: 28px;
-            font-weight: 800;
-            margin-bottom: 6px;
-          }
-
-          .at-desc {
-            font-size: 14.5px;
-            color: #94A3B8;
-            line-height: 1.6;
-            max-width: 640px;
-          }
-
-          .at-btn {
+          .city-pin {
             flex-shrink: 0;
-            padding: 14px 28px;
-            border-radius: 30px;
+            width: 44px; height: 44px;
+            display: grid; place-items: center;
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            background: var(--fr-orange); color: #FFFFFF;
           }
+          .city-pin svg { transform: rotate(45deg); }
+          .city-card h3 { font-size: 17px; font-weight: 700; color: var(--fr-navy); }
+          .city-card span { font-size: 13px; color: #64748B; }
 
-          /* TRUSTED & APP SECTION */
-          .trusted-app-section {
-            padding: clamp(44px, 5vw, 66px) 0;
-            background: var(--bg-light);
-          }
-
-          .trusted-block {
-            margin-bottom: 50px;
-          }
-
+          /* ---------- PARTNERS / ADVERTISE / APP ---------- */
+          .trusted-app-section { background: #FFFFFF; padding: 10px 0 80px; }
+          .trusted-block { margin-bottom: 40px; }
           .trusted-heading {
-            font-size: 20px;
-            font-weight: 700;
-            color: #0F172A;
-            margin-bottom: 24px;
+            text-align: center;
+            font-size: 13px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.14em;
+            color: #94A3B8;
+            margin-bottom: 18px;
           }
-
-          /* Continuous logo marquee. Two identical tracks slide left by exactly one
-             track width, so the second lands where the first started — seamless. */
           .partners-marquee {
             display: flex;
-            /* the keyframe shifts by one track width plus this gap, so the two
-               must always agree — keep them tied through the variable */
-            --marquee-gap: 20px;
+            --marquee-gap: 14px;
             gap: var(--marquee-gap);
             overflow: hidden;
+            pointer-events: none;
             mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
             -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
           }
-
           .partners-track {
             display: flex;
             gap: var(--marquee-gap);
             flex-shrink: 0;
             animation: zc-marqueeScroll 32s linear infinite;
           }
-
-          .partners-marquee:hover .partners-track {
-            animation-play-state: paused;
-          }
-
-          /* decorative only: never intercept a swipe */
-          .partners-marquee {
-            pointer-events: none;
-          }
-
-          
-
-          @media (prefers-reduced-motion: reduce) {
-            .partners-track {
-              animation: none;
-            }
-          }
-
+          @media (prefers-reduced-motion: reduce) { .partners-track { animation: none; } }
           .partner-logo-item {
-            background: var(--bg-raised);
-            border: 1px solid var(--border-light);
-            box-shadow: var(--shadow-sm), var(--hairline);
-            padding: 14px 20px;
-            border-radius: var(--radius-md);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-width: 150px;
-            flex-shrink: 0;
+            display: flex; flex-direction: column; justify-content: center;
+            min-width: 180px;
+            padding: 12px 20px;
+            border-radius: 14px;
+            background: #FAF7F3;
+            border: 1px solid var(--fr-line);
           }
+          .p-title { font-weight: 700; color: var(--fr-navy); font-size: 14.5px; white-space: nowrap; }
+          .p-sub { font-size: 12px; color: #94A3B8; white-space: nowrap; }
 
-          .partner-logo-item .p-title {
-            font-size: 15px;
-            font-weight: 800;
-            color: #0B1F3A;
-            letter-spacing: 0.5px;
+          .advertise-teaser {
+            display: flex; align-items: center; justify-content: space-between; gap: 24px;
+            padding: clamp(24px, 3vw, 36px);
+            margin-bottom: 24px;
+            border-radius: 26px;
+            background: linear-gradient(120deg, #FFE7CC 0%, #FFD3A1 100%);
           }
-
-          .partner-logo-item .p-sub {
-            font-size: 8.5px;
-            color: #64748B;
-            letter-spacing: 0.8px;
+          .at-tag {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+            color: #9A4A05; margin-bottom: 8px;
           }
+          .at-title { font-size: clamp(1.4rem, 1rem + 1.4vw, 2rem); font-weight: 800; color: var(--fr-navy); margin-bottom: 8px; }
+          .at-desc { color: #5B4630; max-width: 620px; font-size: 15px; line-height: 1.6; }
 
           .app-download-banner {
-            background: linear-gradient(135deg, #00BBA9 0%, #009688 100%);
-            border-radius: 20px;
-            padding: 40px 50px;
+            position: relative;
+            overflow: hidden;
             display: grid;
             grid-template-columns: 1.2fr 0.8fr;
             align-items: center;
-            color: #FFFFFF;
-            box-shadow: 0 16px 36px rgba(0, 187, 169, 0.25);
-          }
-
-          .app-banner-title {
-            font-size: 32px;
-            font-weight: 800;
-            margin-bottom: 8px;
-          }
-
-          .app-banner-desc {
-            font-size: 16px;
-            opacity: 0.95;
-          }
-
-          .qr-box {
-            background: #FFFFFF;
-            padding: 10px;
-            border-radius: 12px;
-          }
-
-          .store-btns-column {
-            display: flex;
-            gap: 10px;
-          }
-
-          .store-btn {
-            background: #0B1F3A;
-            padding: 8px 16px;
-            border-radius: 8px;
-            display: flex;
-            flex-direction: column;
-            cursor: pointer;
-          }
-
-          .st-sub {
-            font-size: 9px;
-            opacity: 0.7;
-          }
-
-          .st-name {
-            font-size: 13px;
-            font-weight: 600;
-          }
-
-          .mockup-phone {
-            width: 220px;
-            height: 320px;
-            background: #0B1F3A;
-            border: 6px solid #FFFFFF;
+            gap: 24px;
+            padding: clamp(30px, 4vw, 56px);
             border-radius: 30px;
-            margin: 0 auto;
-            padding: 10px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            background:
+              radial-gradient(60% 90% at 100% 100%, rgba(247, 148, 29, 0.35), transparent 60%),
+              linear-gradient(150deg, #12305A 0%, var(--fr-navy) 70%);
+            color: #FFFFFF;
           }
+          .light-eyebrow { color: #FFB55C; }
+          .app-banner-title {
+            font-size: clamp(1.7rem, 1.1rem + 2vw, 2.8rem);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 12px;
+            color: #FFFFFF;
+          }
+          .app-banner-desc { color: #A9B6C9; font-size: 15.5px; max-width: 440px; margin-bottom: 26px; }
+          .app-store-btns { display: flex; gap: 14px; align-items: stretch; flex-wrap: wrap; }
+          .qr-box {
+            width: 92px; height: 92px; border-radius: 16px;
+            display: grid; place-items: center;
+            background: #FFFFFF;
+          }
+          .store-btns-column { display: flex; flex-direction: column; gap: 10px; }
+          .store-btn {
+            display: flex; flex-direction: column;
+            min-width: 160px;
+            padding: 8px 16px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #FFFFFF;
+            text-decoration: none;
+          }
+          .st-sub { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: #A9B6C9; }
+          .st-name { font-size: 15px; font-weight: 700; }
 
+          .app-banner-right { display: flex; justify-content: center; }
+          .mockup-phone {
+            width: 210px;
+            padding: 10px;
+            border-radius: 34px;
+            background: #FFFFFF;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.35);
+            transform: rotate(6deg);
+          }
           .mockup-screen {
-            background: #07152B;
-            height: 100%;
-            border-radius: 20px;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 26px 16px 20px;
+            border-radius: 26px;
+            background: var(--fr-cream);
             text-align: center;
           }
-
-          .m-logo {
-            font-weight: 800;
-            font-size: 20px;
-            color: #00BBA9;
+          .m-logo-img { width: 64px; height: 64px; border-radius: 16px; object-fit: cover; margin-bottom: 8px; }
+          .m-logo { font-size: 22px; font-weight: 800; font-style: italic; color: var(--fr-orange); }
+          .m-logo b { color: var(--fr-navy); }
+          .m-tag { font-size: 10.5px; color: #64748B; margin: 2px 0 16px; letter-spacing: 0.04em; }
+          .m-field {
+            width: 100%;
+            display: flex; align-items: center; gap: 8px;
+            padding: 9px 10px; margin-bottom: 6px;
+            border-radius: 10px;
+            background: #FFFFFF;
+            font-size: 11.5px; color: #94A3B8; text-align: left;
           }
-
-          .m-tag {
-            font-size: 11px;
-            color: #FFFFFF;
-            margin: 10px 0;
-          }
-
           .m-btn {
-            background: #00BBA9;
+            width: 100%;
+            margin-top: 6px;
+            padding: 10px;
+            border-radius: 12px;
+            background: var(--fr-orange);
             color: #FFFFFF;
-            font-size: 12px;
-            font-weight: 600;
-            padding: 8px 16px;
-            border-radius: 20px;
+            font-size: 12.5px; font-weight: 700;
           }
 
-          /* RESPONSIVE MEDIA QUERIES */
-          @media (max-width: 1200px) {
-            .vehicles-track > .vehicle-card {
-              flex-basis: 210px;
-            }
+          /* ---------- RESPONSIVE ---------- */
+          @media (max-width: 1080px) {
+            .booking-form { grid-template-columns: 1fr 1fr; }
+            .booking-submit-btn { grid-column: 1 / -1; }
           }
 
-          @media (max-width: 1024px) {
-            .hero-container {
-              grid-template-columns: 1fr;
-            }
-            .hero-right {
-              justify-content: flex-start;
-            }
-            .services-grid {
-              grid-template-columns: repeat(4, 1fr);
-            }
-            .why-us-grid, .drivers-grid {
-              grid-template-columns: repeat(2, 1fr);
-            }
-            .advertise-teaser-inner {
-              flex-direction: column;
-              align-items: flex-start;
-            }
-            .app-download-banner {
-              grid-template-columns: 1fr;
-              gap: 30px;
-              padding: 30px;
-            }
+          @media (max-width: 960px) {
+            .hero-container { grid-template-columns: 1fr; }
+            .hero-right { margin-top: 8px; }
+            .pin-stage { width: min(300px, 78vw); }
+            .why-layout { grid-template-columns: 1fr; }
+            .app-download-banner { grid-template-columns: 1fr; }
+            .app-banner-right { display: none; }
           }
 
-          @media (max-width: 768px) {
-            .hero-section {
-              padding: 38px 0 48px;
-              background-position: 70% center;
-            }
-            .hero-title {
-              font-size: 40px;
-            }
-            /* tighten the stack: subtitle -> buttons -> badges was leaving a big
-               dead band in the middle of the hero on a phone */
-            .hero-subtitle {
-              font-size: 15.5px;
-              margin-bottom: 18px;
-            }
-            .hero-cta-group {
-              gap: 10px;
-              margin-bottom: 18px;
-            }
-            .hero-trust-badges {
-              gap: 12px 14px;
-              padding-top: 16px;
-            }
-            .hero-container {
-              gap: 24px;
-            }
-            .booking-card {
-              max-width: 100%;
-            }
-            .at-title {
-              font-size: 23px;
-            }
-            .app-banner-title {
-              font-size: 25px;
-            }
-            .trusted-app-section {
-              padding: 45px 0;
-            }
-            .trusted-block {
-              margin-bottom: 34px;
-            }
+          @media (max-width: 720px) {
+            .steps-grid { grid-template-columns: 1fr; gap: 30px; }
+            .steps-grid::before { display: none; }
+            .advertise-teaser { flex-direction: column; align-items: flex-start; }
           }
 
-          @media (max-width: 640px) {
-            .hero-title {
-              font-size: 33px;
-            }
-            .services-grid {
-              grid-template-columns: repeat(2, 1fr);
-            }
-            .why-us-grid, .drivers-grid, .cities-grid {
-              grid-template-columns: 1fr;
-            }
-            .partners-marquee, .vehicles-marquee {
-              --marquee-gap: 12px;
-            }
-            
-            .partner-logo-item {
-              min-width: 132px;
-              padding: 12px 14px;
-            }
-            .app-download-banner {
-              padding: 24px 20px;
-              border-radius: 16px;
-            }
-            .app-store-btns {
-              flex-wrap: wrap;
-            }
-            .hero-btn-main, .hero-btn-app {
-              flex: 1 1 auto;
-              justify-content: center;
-            }
-            .field-row {
-              grid-template-columns: 1fr;
-            }
-            .booking-tabs {
-              gap: 2px;
-            }
-            .b-tab {
-              font-size: 11.5px;
-              padding: 8px 2px;
-            }
-
-            /* --- length trimming: same content, far less scrolling --- */
-
-            /* 9 icon tiles: 3 across = 3 rows instead of 5 */
-            .services-grid {
-              grid-template-columns: repeat(3, 1fr);
-              gap: 8px;
-            }
-            .service-card {
-              padding: 12px 4px;
-            }
-            .service-icon-wrapper {
-              width: 38px;
-              height: 38px;
-              margin-bottom: 7px;
-            }
-            .service-card-title {
-              font-size: 11px;
-            }
-
-            /* value props as compact rows rather than tall cards */
-            .why-us-section {
-              padding: 34px 0 38px;
-            }
-            .why-us-grid {
-              gap: 18px;
-            }
-            /* the icon shrinks on mobile, so the row gap has to grow to stop the
-               heading sitting right against it */
-            .why-us-card {
-              gap: 14px;
-            }
-            .why-icon-box {
-              width: 34px;
-              height: 34px;
-            }
-            .why-title {
-              font-size: 13.5px;
-            }
-            .why-desc {
-              font-size: 11.5px;
-            }
-            .mb-10 {
-              margin-bottom: 20px;
-            }
-
-            /* launch cities: icon on the left, name + note stacked beside it,
-               so each city is one short row instead of a tall stacked card */
-            .city-card {
-              display: grid;
-              grid-template-columns: auto 1fr;
-              column-gap: 12px;
-              align-items: center;
-              padding: 14px 16px;
-            }
-            .city-icon {
-              grid-row: 1 / span 2;
-              width: 36px;
-              height: 36px;
-              margin-bottom: 0;
-            }
-            .city-card h3 {
-              font-size: 16px;
-              margin-bottom: 0;
-            }
-            .city-card span {
-              font-size: 11.5px;
-            }
-
-            .advertise-teaser {
-              padding: 30px 0;
-            }
-            .at-desc {
-              font-size: 13.5px;
-            }
+          @media (max-width: 560px) {
+            .booking-form { grid-template-columns: 1fr; }
+            .booking-tabs { overflow-x: auto; }
+            .b-tab { padding: 8px 12px; font-size: 13px; white-space: nowrap; }
+            .why-us-grid { grid-template-columns: 1fr; }
+            .speed-lines span:nth-child(2) { width: 110px; }
+            .float-chip { padding: 8px 12px 8px 8px; }
+            .float-chip span { display: none; }
+            .chip-top { right: -4%; }
+            .chip-bottom { left: -2%; }
+            .hero-cta-group .btn { flex: 1 1 auto; }
+            .trusted-app-section { padding-bottom: 50px; }
           }
-      
         }
 
-        /* One track width plus the gap, so track two lands exactly where
-           track one started. */
+        @keyframes fr-speed {
+          0% { transform: translateX(-16px); opacity: 0; }
+          30% { opacity: 1; }
+          100% { transform: translateX(18px); opacity: 0; }
+        }
+
+        @keyframes fr-float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+
         /* One track width plus one gap, so the duplicate track lands exactly
-           where the first began. There were previously two blocks with the same
-           name and different offsets, and the partner strip referenced a third
-           name that did not exist — so it never moved at all. */
+           where the first began. */
         @keyframes zc-marqueeScroll {
-        to { transform: translateX(calc(-100% - var(--marquee-gap))); }
+          to { transform: translateX(calc(-100% - var(--marquee-gap))); }
         }
       `}</style>
     </div>

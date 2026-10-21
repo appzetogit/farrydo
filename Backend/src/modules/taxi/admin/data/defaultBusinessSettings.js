@@ -1,7 +1,7 @@
 export const createDefaultBusinessSettings = () => ({
   scope: 'default',
   general: {
-    app_name: 'Appzeto',
+    app_name: 'Ferrido',
     contact_phone_1: '0000000000',
     contact_phone_2: '0000000000',
     contact_booking_number: '9999999999',

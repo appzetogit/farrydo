@@ -12602,6 +12602,6 @@ export const getAdminEarningDetails = async (query = {}) => {
     }
     case 'commission':
     default:
-      return rideResult('Total commission', 'Commission ZI CAB earned on each completed trip.', rides, 'Commission', money(summary.adminCommission));
+      return rideResult('Total commission', 'Commission Ferrido earned on each completed trip.', rides, 'Commission', money(summary.adminCommission));
   }
 };
