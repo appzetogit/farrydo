@@ -16,16 +16,18 @@ export const normalizeAssetUrl = (url = '') => {
   return `${BACKEND_ORIGIN}${url.startsWith('/') ? '' : '/'}${url}`;
 };
 
+/// Shown wherever a logo is expected and none has been uploaded in General
+/// Settings - previously each screen fell back to its own placeholder icon.
+const BUNDLED_LOGO = '/ferrido-icon.png';
+
 const DEFAULT_SETTINGS_CONTEXT = {
   settings: {
     general: {
       // Shown until the CMS responds; settings.general.app_name overrides it.
       app_name: 'Ferrido - Ride Easy, Arrive Happy',
-      // Left empty on purpose. These are resolved against BACKEND_ORIGIN because
-      // the CMS serves uploaded assets, so a frontend-bundled path like
-      // /zicab-logo.jpg would 404. Empty means the static favicon in index.html
-      // stands, and a real CMS upload still overrides it.
-      logo: '',
+      // The bundled Ferrido icon until the CMS responds; an uploaded logo replaces
+      // it. favicon stays empty so the static one in index.html stands.
+      logo: BUNDLED_LOGO,
       favicon: '',
     },
     customization: {
@@ -165,7 +167,9 @@ const buildFaviconHref = (faviconUrl = '') => {
 const buildSettingsState = (payload = {}) => ({
   general: {
     ...(payload?.general || {}),
-    logo: normalizeAssetUrl(payload?.general?.logo),
+    // Applied after normalizeAssetUrl: the bundled file is served by the
+    // frontend, so it must not be resolved against BACKEND_ORIGIN.
+    logo: normalizeAssetUrl(payload?.general?.logo) || BUNDLED_LOGO,
     favicon: normalizeAssetUrl(payload?.general?.favicon),
   },
   customization: payload?.customization || {},
