@@ -52,6 +52,7 @@ export const createDefaultAppSettings = () => ({
       description: 'Traditional auto rickshaw rides for local commuting.',
       active: true,
       mobile_menu_icon: '/2_AutoRickshaw.png',
+      mobile_menu_cover_image: '/auto_with_people_banner.png',
     },
     {
       _id: objectId(),
@@ -74,6 +75,7 @@ export const createDefaultAppSettings = () => ({
       description: 'Comfortable car rides for your daily transit.',
       active: true,
       mobile_menu_icon: '/4_Taxi.png',
+      mobile_menu_cover_image: '/white_sedan_banner_car.png',
     },
     {
       _id: objectId(),
@@ -85,6 +87,7 @@ export const createDefaultAppSettings = () => ({
       description: 'Reliable parcel delivery service for your goods.',
       active: true,
       mobile_menu_icon: '/5_Parcel.png',
+      mobile_menu_cover_image: '/ride_now_banner.png',
     },
     {
       _id: objectId(),
@@ -93,9 +96,9 @@ export const createDefaultAppSettings = () => ({
       service_type: 'rental',
       order_by: 6,
       short_description: 'Flexible rentals',
-      description: 'Rent a vehicle for self-drive hourly.',
+      description: 'Rent a scooter or bike by the hour.',
       active: true,
-      mobile_menu_icon: '/rental_service_icon.png',
+      mobile_menu_icon: '/scooty.png',
     },
     {
       _id: objectId(),
@@ -106,7 +109,9 @@ export const createDefaultAppSettings = () => ({
       short_description: 'Inter-city travel',
       description: 'Premium cabs for long distance trips.',
       active: true,
-      mobile_menu_icon: '/outstation_service_icon.png',
+      // outstation_service_icon.png is actually a bus illustration - used for Bus below
+      mobile_menu_icon: '/rental_service_icon.png',
+      mobile_menu_cover_image: '/vehicles/innova-crysta.jpg',
     },
     {
       _id: objectId(),
@@ -117,7 +122,7 @@ export const createDefaultAppSettings = () => ({
       short_description: 'Bus services',
       description: 'Book bus tickets online.',
       active: true,
-      mobile_menu_icon: '/bus_service_icon.png',
+      mobile_menu_icon: '/outstation_service_icon.png',
     },
   ],
   onboarding_screens: [

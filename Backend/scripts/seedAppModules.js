@@ -15,12 +15,24 @@
  * Idempotent by name: existing modules are updated in place, so admin edits to
  * active/order survive a re-run.
  *
+ * Image paths in the defaults point at files in frontend/public. When
+ * FRONTEND_URL is set they are stored as absolute URLs, so the mobile apps
+ * (which don't share the web origin) can load them too.
+ *
  * Usage: node scripts/seedAppModules.js
  */
 import mongoose from 'mongoose';
 import { env } from '../src/config/env.js';
 import { TaxiAppModule } from '../src/modules/taxi/admin/models/TaxiAppModule.js';
 import { createDefaultAppSettings } from '../src/modules/taxi/admin/data/defaultAppSettings.js';
+
+const assetOrigin = String(process.env.FRONTEND_URL || '').replace(/\/+$/, '');
+
+const toAssetUrl = (path) => {
+  if (!path) return null;
+  if (/^(https?:|data:)/.test(path) || !assetOrigin) return path;
+  return `${assetOrigin}${path.startsWith('/') ? '' : '/'}${path}`;
+};
 
 const run = async () => {
   await mongoose.connect(env.mongoUri, { dbName: env.mongoDbName });
@@ -37,7 +49,8 @@ const run = async () => {
           service_type: mod.service_type,
           short_description: mod.short_description || '',
           description: mod.description || '',
-          mobile_menu_icon: mod.mobile_menu_icon || '',
+          mobile_menu_icon: toAssetUrl(mod.mobile_menu_icon) || '',
+          mobile_menu_cover_image: toAssetUrl(mod.mobile_menu_cover_image),
         },
         // order and active are admin-editable; only set them on first insert
         $setOnInsert: {
@@ -62,6 +75,8 @@ const run = async () => {
           service: m.service_type,
           order: m.order_by,
           active: m.active,
+          icon: m.mobile_menu_icon,
+          cover: m.mobile_menu_cover_image,
         })),
       },
       null,
