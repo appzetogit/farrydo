@@ -169,7 +169,7 @@ const getWalletSnapshot = async (driver) => {
 };
 
 // Whether a paid pass is covering this driver right now, in which case the
-// wallet minimum is not asked of them. Always on: a pass is mandatory.
+// wallet minimum is not asked of them, when the admin has that waiver on.
 const isCoveredBySubscription = async (driverId, { session } = {}) => {
   const settings = await resolveDriverSubscriptionSettings();
   if (!settings.waiveWalletMinimum) return false;
@@ -223,11 +223,14 @@ export const ensureDriverWalletCanAcceptRide = async (driverOrId, { session } = 
       'wallet.cashLimit': wallet.cashLimit,
       'wallet.isBlocked': true,
     });
-    // A pass waives the minimum, so buying today's pass is the way back to
-    // work - not a top-up of the minimum.
-    throw new ApiError(403, wallet.rules.isWalletEnabled
+    if (!wallet.rules.isWalletEnabled) {
+      throw new ApiError(403, 'Driver wallet is disabled by admin.');
+    }
+    // When a pass is required, buying today's pass is the way back to work;
+    // otherwise it is topping the wallet up to the minimum.
+    throw new ApiError(403, subscriptionSettings.mode === 'subscription_only'
       ? "Buy today's pass to go online and get rides."
-      : 'Driver wallet is disabled by admin.');
+      : `Add money to your wallet: keep at least ₹${wallet.minimumBalanceForOrders} to get rides.`);
   }
 
   if (Number(driver?.wallet?.cashLimit) !== wallet.cashLimit || driver?.wallet?.isBlocked) {
