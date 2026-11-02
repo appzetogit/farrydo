@@ -124,6 +124,9 @@ import {
   getReferralTranslations,
   getGeneralSettingsCategory,
   getLanguages,
+  createLanguage,
+  getLanguage,
+  updateLanguage,
   getMailSettings,
   getMapSettings,
   getRechargeApiSettings,
@@ -512,6 +515,9 @@ adminRouter.delete('/admin/zones/:id', deleteZone);
 adminRouter.patch('/admin/zones/:id/toggle-status', toggleZoneStatus);
 
 adminRouter.get('/admin/languages', getLanguages);
+adminRouter.post('/admin/languages', createLanguage);
+adminRouter.get('/admin/languages/:id', getLanguage);
+adminRouter.patch('/admin/languages/:id', updateLanguage);
 adminRouter.patch('/admin/languages/:id/status', updateLanguageStatus);
 adminRouter.delete('/admin/languages/:id', deleteLanguage);
 

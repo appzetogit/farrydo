@@ -14,6 +14,9 @@ const adminBusinessSettingSchema = new mongoose.Schema(
     bid_ride: { type: mongoose.Schema.Types.Mixed, default: {} },
     user_home_settings: { type: mongoose.Schema.Types.Mixed, default: {} },
     subscription: { type: mongoose.Schema.Types.Mixed, default: { mode: 'commissionOnly' } },
+    // Without this path updateGeneralSettings drops every save from the Driver
+    // Subscription page, and the mode falls back to commission only.
+    driver_subscription: { type: mongoose.Schema.Types.Mixed },
     referral: {
       type: mongoose.Schema.Types.Mixed,
       default: {

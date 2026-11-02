@@ -361,7 +361,7 @@ const VehicleMultiSelect = ({
           {selectedItems.length ? selectedItems.map((item) => (
             <span
               key={String(item.id || item._id)}
-              className="inline-flex items-center gap-2 rounded-full bg-slate-700 px-3 py-1.5 text-[12px] font-semibold text-black"
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5 text-[12px] font-semibold text-slate-800"
             >
               {item.name}
               <button

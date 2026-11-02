@@ -1506,6 +1506,15 @@ export const getLanguages = asyncHandler(async (_req, res) => {
   const items = await adminService.listLanguages();
   res.json({ success: true, paginator: { data: items }, results: items });
 });
+export const createLanguage = asyncHandler(async (req, res) =>
+  ok(res, await adminService.createLanguage(req.body)),
+);
+export const getLanguage = asyncHandler(async (req, res) =>
+  ok(res, await adminService.getLanguage(req.params.id)),
+);
+export const updateLanguage = asyncHandler(async (req, res) =>
+  ok(res, await adminService.updateLanguage(req.params.id, req.body)),
+);
 export const updateLanguageStatus = asyncHandler(async (req, res) =>
   ok(res, await adminService.updateLanguageStatus(req.params.id, req.body)),
 );

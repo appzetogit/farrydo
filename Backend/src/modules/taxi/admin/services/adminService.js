@@ -11265,6 +11265,56 @@ export const getReferralTranslationContent = async (languageCode = '') => {
 
 export const listLanguages = async () => AppLanguage.find().sort({ code: 1 }).lean();
 
+const normalizeLanguageInput = async (payload, excludeId) => {
+  const name = String(payload.name || '').trim();
+  const code = String(payload.code || '').trim().toLowerCase();
+  if (!name || !code) throw new ApiError(400, 'Name and code are required');
+  const clash = await AppLanguage.findOne({ code, ...(excludeId ? { _id: { $ne: excludeId } } : {}) }).lean();
+  if (clash) throw new ApiError(409, 'Language code already exists');
+  return { name, code };
+};
+
+// Only one language can be the default; making one default clears the rest.
+const applyDefaultLanguage = async (language) => {
+  if (Number(language.default_status) !== 1) return;
+  await AppLanguage.updateMany({ _id: { $ne: language._id } }, { default_status: 0 });
+};
+
+export const createLanguage = async (payload = {}) => {
+  const fields = await normalizeLanguageInput(payload);
+  const language = await AppLanguage.create({
+    ...fields,
+    active: payload.active === undefined ? 1 : Number(payload.active),
+    default_status: Number(payload.default_status) === 1 ? 1 : 0,
+  });
+  await applyDefaultLanguage(language);
+  return language.toObject();
+};
+
+export const getLanguage = async (id) => {
+  const language = await AppLanguage.findById(id).lean();
+  if (!language) throw new ApiError(404, 'Language not found');
+  return language;
+};
+
+export const updateLanguage = async (id, payload = {}) => {
+  const update = {};
+  if (payload.name !== undefined || payload.code !== undefined) {
+    const current = await getLanguage(id);
+    Object.assign(update, await normalizeLanguageInput({
+      name: payload.name ?? current.name,
+      code: payload.code ?? current.code,
+    }, id));
+  }
+  if (payload.active !== undefined) update.active = Number(payload.active);
+  if (payload.default_status !== undefined) update.default_status = Number(payload.default_status) === 1 ? 1 : 0;
+
+  const language = await AppLanguage.findByIdAndUpdate(id, update, { returnDocument: 'after' });
+  if (!language) throw new ApiError(404, 'Language not found');
+  await applyDefaultLanguage(language);
+  return language.toObject();
+};
+
 export const updateLanguageStatus = async (id, payload) => {
   const language = await AppLanguage.findByIdAndUpdate(id, { active: Number(payload.active) }, { returnDocument: 'after' });
   if (!language) throw new ApiError(404, 'Language not found');
