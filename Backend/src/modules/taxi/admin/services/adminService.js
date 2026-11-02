@@ -12109,6 +12109,17 @@ export const getGeneralSettings = async (category) => {
     };
   }
 
+  // Dispatch reads these with the shipped defaults underneath, so the panel
+  // must show the same values or its switches look off while they are on.
+  if (businessKey === 'driver_subscription') {
+    return {
+      settings: {
+        ...(createDefaultBusinessSettings().driver_subscription || {}),
+        ...(await getProjectedSettingsSection(AdminBusinessSetting, createDefaultBusinessSettings, businessKey)),
+      },
+    };
+  }
+
   return {
     settings: await getProjectedSettingsSection(
       AdminBusinessSetting,
