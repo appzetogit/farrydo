@@ -8,6 +8,7 @@ import { createWebsiteBookingRequest } from '../services/websiteBookingService.j
 import { UserWallet } from '../models/UserWallet.js';
 import { AdminBusinessSetting } from '../../admin/models/AdminBusinessSetting.js';
 import { Notification } from '../../admin/promotions/models/Notification.js';
+import { UserNotificationRead, isValidNotificationId } from '../models/UserNotificationRead.js';
 import { BusService } from '../../admin/models/BusService.js';
 import { Driver } from '../../driver/models/Driver.js';
 import { comparePassword, hashPassword, signAccessToken } from '../services/authService.js';
@@ -1708,8 +1709,15 @@ export const registerUser = async (req, res) => {
   });
 };
 
-const serializeUserNotification = (item = {}) => ({
+const USER_NOTIFICATION_QUERY = Object.freeze({
+  status: 'sent',
+  send_to: { $in: ['all', 'users'] },
+});
+
+const serializeUserNotification = (item = {}, readIds = new Set()) => ({
   id: String(item._id || ''),
+  isRead: readIds.has(String(item._id || '')),
+  createdAt: item.sent_at || item.createdAt || null,
   title: String(item.push_title || '').trim(),
   body: String(item.message || '').trim(),
   image: item.image || '',
@@ -1726,22 +1734,69 @@ export const getUserNotifications = async (req, res) => {
 
   // Users don't typically have a service_location_id in their profile like drivers do in this schema,
   // but if they did, we would use it. For now, we fetch all user-targeted notifications.
-  const query = {
-    status: 'sent',
-    send_to: { $in: ['all', 'users'] },
-  };
-
-  const notifications = await Notification.find(query)
+  const notifications = await Notification.find(USER_NOTIFICATION_QUERY)
     .sort({ sent_at: -1, createdAt: -1 })
     .limit(100)
     .lean();
 
+  const reads = await UserNotificationRead.find({
+    userId: user._id,
+    notificationId: { $in: notifications.map((item) => item._id) },
+  })
+    .select('notificationId')
+    .lean();
+  const readIds = new Set(reads.map((read) => String(read.notificationId)));
+
   res.json({
     success: true,
     data: {
-      results: notifications.map(serializeUserNotification),
+      results: notifications.map((item) => serializeUserNotification(item, readIds)),
     },
   });
+};
+
+export const markUserNotificationRead = async (req, res) => {
+  const notificationId = req.params.id;
+
+  if (!isValidNotificationId(notificationId)) {
+    throw new ApiError(404, 'Notification not found');
+  }
+
+  const exists = await Notification.exists({ ...USER_NOTIFICATION_QUERY, _id: notificationId });
+  if (!exists) {
+    throw new ApiError(404, 'Notification not found');
+  }
+
+  await UserNotificationRead.updateOne(
+    { userId: req.auth.sub, notificationId },
+    { $setOnInsert: { userId: req.auth.sub, notificationId } },
+    { upsert: true },
+  );
+
+  res.json({ success: true, message: 'Notification marked as read' });
+};
+
+export const markAllUserNotificationsRead = async (req, res) => {
+  const notifications = await Notification.find(USER_NOTIFICATION_QUERY)
+    .sort({ sent_at: -1, createdAt: -1 })
+    .limit(100)
+    .select('_id')
+    .lean();
+
+  if (notifications.length) {
+    await UserNotificationRead.bulkWrite(
+      notifications.map((item) => ({
+        updateOne: {
+          filter: { userId: req.auth.sub, notificationId: item._id },
+          update: { $setOnInsert: { userId: req.auth.sub, notificationId: item._id } },
+          upsert: true,
+        },
+      })),
+      { ordered: false },
+    );
+  }
+
+  res.json({ success: true, message: 'All notifications marked as read' });
 };
 
 export const deleteUserNotification = async (req, res) => {

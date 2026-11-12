@@ -31,6 +31,10 @@ const DISPATCH_INSTANCE_ID = `${process.pid}:${crypto.randomUUID()}`;
 const DISPATCH_LEASE_TTL_MS = 90_000;
 const DISPATCH_LEASE_REFRESH_MS = 30_000;
 const DISPATCH_RECOVERY_INTERVAL_MS = 30_000;
+/// A ride with no driver this long after booking is cancelled, however many
+/// times its search was restarted by a fare raise or a server restart.
+const RIDE_NO_DRIVER_TIMEOUT_MS = 5 * 60 * 1000;
+const NO_DRIVER_CANCEL_REASON = 'No driver accepted your ride in time, so it was cancelled.';
 const LATE_DRIVER_NOTIFICATION_COOLDOWN_MS = 10_000;
 
 /// How long before a scheduled ride's pickup time the search for a driver
@@ -944,7 +948,23 @@ const closeRideAsUnmatched = async (rideId) => {
   emitToRoom(getUserRoom(ride.userId), 'rideCancelled', {
     rideId: String(ride._id),
     room: getRideRoom(ride._id),
-    reason: 'No drivers accepted the ride request',
+    reason: NO_DRIVER_CANCEL_REASON,
+    reasonCode: 'no_drivers',
+  });
+
+  // Best-effort: the rider may have closed the app while waiting, and a failed
+  // push must not stop the ride being closed.
+  sendPushNotificationToEntities({
+    userIds: [String(ride.userId)],
+    title: 'Ride cancelled',
+    body: NO_DRIVER_CANCEL_REASON,
+    data: {
+      type: 'ride_no_driver',
+      rideId: String(ride._id),
+      reason: NO_DRIVER_CANCEL_REASON,
+    },
+  }).catch((error) => {
+    console.error('Failed to send no-driver cancellation notification', error);
   });
 
   emitToRoom(getRideRoom(ride._id), 'rideRequestClosed', {
@@ -1538,15 +1558,36 @@ export const restoreScheduledDispatches = async () => {
   }
 };
 
+/// Closes immediate rides still unassigned past the deadline. Scheduled rides
+/// are left out because they wait for their pickup time, and website enquiries
+/// because they are handled by admin (see restoreScheduledDispatches).
+export const expireUnassignedRides = async () => {
+  const rides = await Ride.find({
+    status: RIDE_STATUS.SEARCHING,
+    liveStatus: RIDE_LIVE_STATUS.SEARCHING,
+    bookingSource: { $ne: 'website' },
+    scheduledAt: null,
+    createdAt: { $lte: new Date(Date.now() - RIDE_NO_DRIVER_TIMEOUT_MS) },
+  }).select('_id dispatchTracking');
+
+  for (const ride of rides) {
+    hydrateDispatchStateFromRide(ride);
+    await closeRideAsUnmatched(ride._id);
+    stopDispatchFlow(ride._id);
+  }
+};
+
 export const startDispatchRecoveryLoop = () => {
   if (dispatchRecoveryTimer) {
     return;
   }
 
   dispatchRecoveryTimer = setInterval(() => {
-    restoreScheduledDispatches().catch((error) => {
-      console.error('Dispatch recovery sweep failed', error);
-    });
+    expireUnassignedRides()
+      .then(() => restoreScheduledDispatches())
+      .catch((error) => {
+        console.error('Dispatch recovery sweep failed', error);
+      });
   }, DISPATCH_RECOVERY_INTERVAL_MS);
 
   dispatchRecoveryTimer.unref?.();

@@ -31,6 +31,8 @@ import {
   getUserWallet,
   getCurrentUser,
   getUserNotifications,
+  markUserNotificationRead,
+  markAllUserNotificationsRead,
   deleteUserNotification,
   endMyActiveRentalRide,
   getIntercityPackageCatalog,
@@ -142,6 +144,8 @@ userRouter.get('/subscriptions/me', authenticate(['user']), asyncHandler(getMySu
 userRouter.post('/subscriptions/purchase', authenticate(['user']), asyncHandler(buySubscription));
 userRouter.post('/me/delete-request', authenticate(['user']), asyncHandler(requestAccountDeletion));
 userRouter.get('/notifications', authenticate(['user']), asyncHandler(getUserNotifications));
+userRouter.patch('/notifications/read-all', authenticate(['user']), asyncHandler(markAllUserNotificationsRead));
+userRouter.patch('/notifications/:id/read', authenticate(['user']), asyncHandler(markUserNotificationRead));
 userRouter.delete('/notifications/:id', authenticate(['user']), asyncHandler(deleteUserNotification));
 userRouter.delete('/notifications', authenticate(['user']), asyncHandler(clearAllUserNotifications));
 userRouter.post('/sos', authenticate(['user']), asyncHandler(triggerUserSosAlert));
