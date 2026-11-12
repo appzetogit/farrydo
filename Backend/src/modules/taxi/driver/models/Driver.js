@@ -300,6 +300,42 @@ const driverSchema = new mongoose.Schema(
         trim: true,
       },
     },
+    // A change an already-approved driver made from the app (vehicle details or
+    // a re-uploaded document) that waits for an admin. Kept apart from
+    // `approve`, which a brand-new signup also has false, so the admin panel can
+    // count drivers who changed something - and so approving it can tell the
+    // driver exactly once.
+    // Notifications sent after this are unread; set when the driver opens the
+    // notification list.
+    notificationsLastSeenAt: {
+      type: Date,
+      default: null,
+    },
+    profileChangeRequest: {
+      status: {
+        type: String,
+        enum: ['none', 'pending', 'approved', 'rejected'],
+        default: 'none',
+        index: true,
+      },
+      fields: {
+        type: [String],
+        default: [],
+      },
+      requestedAt: {
+        type: Date,
+        default: null,
+      },
+      reviewedAt: {
+        type: Date,
+        default: null,
+      },
+      reviewedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Admin',
+        default: null,
+      },
+    },
     wallet: {
       balance: {
         type: Number,

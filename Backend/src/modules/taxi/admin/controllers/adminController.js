@@ -483,6 +483,10 @@ export const getDrivers = asyncHandler(async (req, res) => {
   ok(res, await adminService.listDrivers(req.query, req.auth?.admin));
 });
 
+export const getDriverProfileChangeCount = asyncHandler(async (req, res) => {
+  ok(res, await adminService.countPendingDriverProfileChanges(req.auth?.admin));
+});
+
 export const getDriverRatings = asyncHandler(async (req, res) =>
   ok(res, await adminService.listDriverRatings(req.query)),
 );

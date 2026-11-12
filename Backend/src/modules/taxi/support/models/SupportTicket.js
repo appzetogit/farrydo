@@ -42,10 +42,13 @@ const supportTicketSchema = new mongoose.Schema(
       trim: true,
       index: true,
     },
+    // Optional: the apps let a ticket be raised without picking a title (and
+    // there may be no titles set up), which then files as "General Support".
+    // Requiring it made every such ticket fail with "Validation failed".
     titleId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'TaxiSupportTicketTitle',
-      required: true,
+      default: null,
     },
     title: {
       type: String,

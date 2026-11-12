@@ -117,6 +117,7 @@ import {
   rejectDriverWithdrawalRequest,
   getDeletedDrivers,
   getDriverDeletionRequests,
+  getDriverProfileChangeCount,
   getFirebaseSettings,
   getGoodsTypes,
   getIntercityTrips,
@@ -323,6 +324,7 @@ adminRouter.get('/admin/drivers', getDrivers);
 adminRouter.post('/admin/drivers/bulk-import', bulkImportDrivers);
 adminRouter.get('/admin/drivers/deleted', authenticate(['admin']), getDeletedDrivers);
 adminRouter.get('/admin/drivers/delete-requests', authenticate(['admin']), getDriverDeletionRequests);
+adminRouter.get('/admin/drivers/profile-change-requests/count', authenticate(['admin']), getDriverProfileChangeCount);
 adminRouter.patch('/admin/drivers/delete-requests/:id/approve', authenticate(['admin']), approveDriverDeletionRequest);
 adminRouter.patch('/admin/drivers/delete-requests/:id/reject', authenticate(['admin']), rejectDriverDeletionRequest);
 adminRouter.patch('/admin/drivers/deleted/:id/restore', authenticate(['admin']), restoreDeletedDriver);

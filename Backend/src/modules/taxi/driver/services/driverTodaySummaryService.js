@@ -1,4 +1,6 @@
+import mongoose from 'mongoose';
 import { Driver } from '../models/Driver.js';
+import { Ride } from '../../user/models/Ride.js';
 
 const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 
@@ -128,12 +130,52 @@ export const buildDriverTodaySummaryFromDocument = (driver, { now = new Date() }
   };
 };
 
+/// Today's completed rides for a driver, counted from the rides themselves.
+/// The stored summary is only bumped after a ride's wallet settlement, so a
+/// completion that failed half way (as every one did while transactions broke
+/// on the standalone mongod) left it at 0 for good. Recounting heals that.
+const countTodayCompletedRides = async (driverId, now) => {
+  const dayKey = toIstDayKey(now);
+  const dayStartUtc = new Date(new Date(`${dayKey}T00:00:00.000Z`).getTime() - IST_OFFSET_MS);
+  const dayEndUtc = new Date(dayStartUtc.getTime() + 24 * 60 * 60 * 1000);
+
+  const [row] = await Ride.aggregate([
+    {
+      $match: {
+        driverId: new mongoose.Types.ObjectId(String(driverId)),
+        status: 'completed',
+        completedAt: { $gte: dayStartUtc, $lt: dayEndUtc },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        rides: { $sum: 1 },
+        earnings: { $sum: { $ifNull: ['$driverEarnings', 0] } },
+        distanceMeters: { $sum: { $ifNull: ['$estimatedDistanceMeters', 0] } },
+      },
+    },
+  ]);
+
+  return {
+    rides: normalizeNumber(row?.rides),
+    earnings: normalizeNumber(row?.earnings),
+    distanceMeters: normalizeNumber(row?.distanceMeters),
+  };
+};
+
 export const syncDriverTodaySummaryDocument = async (driver, { now = new Date() } = {}) => {
   if (!driver?._id) {
     return null;
   }
 
   const nextSummary = buildDriverTodaySummaryFromDocument(driver, { now });
+  try {
+    Object.assign(nextSummary, await countTodayCompletedRides(driver._id, now));
+  } catch (error) {
+    // Fall back to the stored counter rather than failing /drivers/me.
+    console.error('Driver today summary recount failed', String(driver._id), error.message);
+  }
 
   const currentSummary = mergeSummary(driver?.todaySummary, nextSummary.dateKey);
   const changed =

@@ -32,6 +32,7 @@ import {
   notifyRideBiddingUpdated,
   restartRideDispatchWithLatestFare,
   startDispatchFlow,
+  hasDriversForImmediateBooking,
 } from '../../services/dispatchService.js';
 import { getTipSettings } from '../../services/appSettingsService.js';
 import { getBidRideSettings, getTransportRideSettings } from '../../services/transportSettingsService.js';
@@ -312,6 +313,31 @@ export const createRide = async (req, res) => {
   const resolvedVehicleTypeId = vehicleTypeId || (Array.isArray(vehicleTypeIds) ? vehicleTypeIds[0] : null);
   if (!resolvedVehicleTypeId) {
     throw new ApiError(400, 'vehicleTypeId is required');
+  }
+
+  // An immediate ride with nobody of that type around used to be booked anyway
+  // and sit searching until it timed out. Scheduled and bidding rides still
+  // book: drivers can turn up before the pickup or the bid window closes.
+  const isImmediateBooking =
+    !scheduledAt && String(bookingMode || 'normal').trim().toLowerCase() !== 'bidding';
+  if (isImmediateBooking) {
+    const pickupCoords = normalizePoint(pickup, 'pickup');
+    const driversAvailable = await hasDriversForImmediateBooking({
+      pickupCoords,
+      vehicleTypeId: resolvedVehicleTypeId,
+      vehicleTypeIds,
+      serviceLocationId: service_location_id || null,
+    }).catch((error) => {
+      // A failed check must not block booking; dispatch still searches.
+      console.error('Driver availability check failed', error.message);
+      return true;
+    });
+
+    if (!driversAvailable) {
+      throw new ApiError(409, 'No driver is available for this vehicle type nearby. Please try another vehicle or try again shortly.', {
+        code: 'NO_DRIVER_AVAILABLE',
+      });
+    }
   }
 
   const ride = await createRideRecord({

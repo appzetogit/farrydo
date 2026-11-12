@@ -636,6 +636,9 @@ const AdminLayout = () => {
   const [chatUnreadCount, setChatUnreadCount] = useState(0);
   const [rideRequestUnreadTotal, setRideRequestUnreadTotal] = useState(0);
   const [bookingUnreadTotal, setBookingUnreadTotal] = useState(0);
+  // Drivers waiting for review of a vehicle or document change; badges
+  // Driver Management > Pending Drivers.
+  const [driverProfileChangeCount, setDriverProfileChangeCount] = useState(0);
   const [rideRequestPage, setRideRequestPage] = useState(1);
   const [bookingPage, setBookingPage] = useState(1);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
@@ -857,8 +860,9 @@ const AdminLayout = () => {
       '/admin/trips': rideRequestUnreadCount,
       '/admin/owners/bookings': bookingUnreadCount,
       '/admin/chat': effectiveChatUnreadCount,
+      '/admin/drivers/pending': driverProfileChangeCount,
     }),
-    [bookingUnreadCount, effectiveChatUnreadCount, rideRequestUnreadCount],
+    [bookingUnreadCount, driverProfileChangeCount, effectiveChatUnreadCount, rideRequestUnreadCount],
   );
   const pageTitle = resolvePageTitle(location.pathname, sidebarSections, appName);
   const searchEntries = useMemo(() => flattenSearchEntries(flattenItems(sidebarSections)), [sidebarSections]);
@@ -950,6 +954,36 @@ const AdminLayout = () => {
     setSearchTerm('');
     setIsNotificationsOpen(false);
   }, [location.pathname]);
+
+  // Kept apart from the sync below so a failing count never blanks the chat
+  // and ride badges, and vice versa.
+  useEffect(() => {
+    if (!localStorage.getItem('adminToken') || mode !== ADMIN_MODE) {
+      setDriverProfileChangeCount(0);
+      return undefined;
+    }
+
+    let active = true;
+    const syncDriverProfileChanges = async () => {
+      try {
+        const response = await adminService.getDriverProfileChangeCount();
+        if (active) {
+          setDriverProfileChangeCount(Math.max(0, Number(response?.data?.count ?? response?.count ?? 0)));
+        }
+      } catch {
+        // Leave the last count; the next tick retries.
+      }
+    };
+
+    syncDriverProfileChanges();
+    const intervalId = window.setInterval(syncDriverProfileChanges, 30000);
+    window.addEventListener('focus', syncDriverProfileChanges);
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', syncDriverProfileChanges);
+    };
+  }, [mode, location.pathname]);
 
   useEffect(() => {
     const token = localStorage.getItem('adminToken');

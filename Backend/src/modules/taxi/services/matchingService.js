@@ -80,16 +80,23 @@ const buildDriverMatchFilters = ({ zoneId, serviceLocationId, vehicleTypeId, veh
       ? { $or: vehicleTypeClauses }
       : vehicleTypeClauses[0] || {};
 
+  // Both the wallet rule and a multi-type vehicle filter are `$or`s; spreading
+  // them into one object let the vehicle `$or` overwrite the wallet one, so
+  // drivers with a blocked wallet were still offered rides.
   return {
     isOnline: true,
     isOnRide: false,
-    $or: [
-      { owner_id: { $ne: null } },
-      { 'wallet.isBlocked': { $ne: true } },
+    $and: [
+      {
+        $or: [
+          { owner_id: { $ne: null } },
+          { 'wallet.isBlocked': { $ne: true } },
+        ],
+      },
+      vehicleTypeFilter,
     ],
     ...(zoneId ? { zoneId } : {}),
     ...(serviceLocationId ? { service_location_id: serviceLocationId } : {}),
-    ...vehicleTypeFilter,
   };
 };
 

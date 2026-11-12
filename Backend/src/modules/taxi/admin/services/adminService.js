@@ -63,6 +63,7 @@ import { grantDriverJoiningBonus,
   serializeDriverWallet,
 } from '../../driver/services/walletService.js';
 import { purchaseDriverSubscriptionFromJoiningBonus } from '../../driver/services/driverSubscriptionService.js';
+import { notifyDriver } from '../../driver/services/driverNotificationService.js';
 import { RIDE_LIVE_STATUS, RIDE_STATUS, VEHICLE_TYPES } from '../../constants/index.js';
 import {
   cancelRideByAdmin,
@@ -2738,6 +2739,7 @@ const DRIVER_LIST_SELECT = [
   'wallet',
   'approve',
   'status',
+  'profileChangeRequest',
   'createdAt',
   'updatedAt',
 ].join(' ');
@@ -2792,6 +2794,9 @@ const serializeDriverListItem = (driver) => ({
     updatedAt: driver.wallet?.updatedAt || null,
   },
   wallet_balance: Number(driver.wallet?.balance || 0),
+  profile_change_status: driver.profileChangeRequest?.status || 'none',
+  profile_change_fields: driver.profileChangeRequest?.fields || [],
+  profile_change_requested_at: driver.profileChangeRequest?.requestedAt || null,
   latitude: Number(driver.location?.coordinates?.[1] ?? null),
   longitude: Number(driver.location?.coordinates?.[0] ?? null),
   // Which way the vehicle is pointing, so the admin map can orient the
@@ -4510,7 +4515,19 @@ export const adjustUserWallet = async (id, payload = {}) => {
   return { balance: Number(nextBalance.toFixed(2)) };
 };
 
-export const listDrivers = async ({ page = 1, limit = 50, status, search, approve, isOnline } = {}, currentAdmin = null) => {
+/// Drivers who changed their vehicle or re-uploaded a document and are waiting
+/// for an admin - the badge on Driver Management.
+export const countPendingDriverProfileChanges = async (currentAdmin = null) => {
+  const query = { deletedAt: null, 'profileChangeRequest.status': 'pending' };
+  if (currentAdmin) {
+    assertAdminPermission(currentAdmin, 'drivers.view', 'drivers');
+    Object.assign(query, buildServiceLocationScopeQuery(currentAdmin));
+  }
+
+  return { count: await Driver.countDocuments(query) };
+};
+
+export const listDrivers = async ({ page = 1, limit = 50, status, search, approve, isOnline, profileChange, includeProfileChanges } = {}, currentAdmin = null) => {
   const safePage = Number(page) || 1;
   const safeLimit = Number(limit) || 50;
   const start = (safePage - 1) * safeLimit;
@@ -4531,6 +4548,18 @@ export const listDrivers = async ({ page = 1, limit = 50, status, search, approv
 
   if (isOnline !== undefined) {
     query.isOnline = isOnline === 'true' || isOnline === true || isOnline === 1;
+  }
+
+  if (['none', 'pending', 'approved', 'rejected'].includes(String(profileChange || ''))) {
+    query['profileChangeRequest.status'] = String(profileChange);
+  }
+
+  // The Pending Drivers page also lists approved drivers whose re-uploaded
+  // document waits for review - they stay approved, so `approve=false` alone
+  // would hide them.
+  if (String(includeProfileChanges) === 'true' && query.approve === false) {
+    delete query.approve;
+    query.$and = [...(query.$and || []), { $or: [{ approve: false }, { 'profileChangeRequest.status': 'pending' }] }];
   }
 
   if (search) {
@@ -5409,6 +5438,64 @@ export const createDriver = async (payload = {}, currentAdmin = null) => {
   return serializeDriver(driver.toObject());
 };
 
+const readDocumentStatus = (document = {}) =>
+  String(document?.status || document?.verificationStatus || document?.reviewStatus || '').trim().toLowerCase();
+
+/// Closes a driver's pending profile change once an admin save resolves it,
+/// and tells the driver. Approved means the driver is approved again and no
+/// document is still waiting; a rejected document or a rejected driver closes
+/// it as rejected. Anything else (a partial review) leaves it pending, so the
+/// driver hears about it once, when it is really done.
+const settleDriverProfileChange = async (driver, update, currentAdmin) => {
+  const documents = Object.values(driver.documents || {}).filter((item) => item && typeof item === 'object');
+  const statuses = documents.map(readDocumentStatus);
+  const anyDocumentPending = statuses.some((status) => status === 'pending');
+  const anyDocumentRejected = statuses.some((status) => status === 'rejected');
+  const driverRejected = update.approve === false && ['rejected', 'blocked', 'disapproved'].includes(String(update.status || '').toLowerCase());
+
+  let outcome = null;
+  // "Approve" on the driver itself (no documents in the save) signs off the
+  // whole change, documents included.
+  const approvedWholeDriver = update.approve === true && update.documents === undefined;
+
+  if (driverRejected || (update.documents !== undefined && anyDocumentRejected)) {
+    outcome = 'rejected';
+  } else if (approvedWholeDriver || (driver.approve === true && !anyDocumentPending)) {
+    outcome = 'approved';
+  }
+
+  if (!outcome) {
+    return;
+  }
+
+  // Conditional on still being pending: two admin saves at once notify once.
+  const settled = await Driver.updateOne(
+    { _id: driver._id, 'profileChangeRequest.status': 'pending' },
+    {
+      $set: {
+        'profileChangeRequest.status': outcome,
+        'profileChangeRequest.reviewedAt': new Date(),
+        'profileChangeRequest.reviewedBy': currentAdmin?._id || null,
+      },
+    },
+  );
+  if (!settled.modifiedCount) {
+    return;
+  }
+
+  const message =
+    outcome === 'approved'
+      ? { title: 'Profile approved', body: 'Your profile changes have been approved. You can go online now.' }
+      : { title: 'Profile changes need attention', body: 'Some of your profile changes were not approved. Please check your documents.' };
+
+  // The admin's save already succeeded; a failed notification must not undo it.
+  await notifyDriver({
+    driverId: driver._id,
+    ...message,
+    type: outcome === 'approved' ? 'profile_approved' : 'profile_rejected',
+  }).catch((error) => console.error('Profile change notification failed', String(driver._id), error.message));
+};
+
 export const updateDriver = async (id, payload, currentAdmin = null) => {
   if (currentAdmin) {
     assertAdminPermission(currentAdmin, 'drivers.view', 'drivers');
@@ -5555,8 +5642,13 @@ export const updateDriver = async (id, payload, currentAdmin = null) => {
     update.onboarding = payload.onboarding;
   }
 
+  const previous = await Driver.findById(id).select('profileChangeRequest').lean();
   const driver = await Driver.findByIdAndUpdate(id, update, { returnDocument: 'after' });
   if (!driver) throw new ApiError(404, 'Driver not found');
+
+  if (previous?.profileChangeRequest?.status === 'pending') {
+    await settleDriverProfileChange(driver, update, currentAdmin);
+  }
 
   // Approval is the trigger for the one-time joining bonus. Deliberately not
   // awaited into the failure path of the approval itself: the driver is already

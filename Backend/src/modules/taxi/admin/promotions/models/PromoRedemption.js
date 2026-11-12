@@ -27,10 +27,12 @@ const promoRedemptionSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    // Null for a ride whose pickup was outside every zone, using a promo
+    // that is not tied to any city.
     service_location_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'TaxiServiceLocation',
-      required: true,
+      default: null,
       index: true,
     },
     transport_type: {

@@ -68,6 +68,7 @@ export const adminService = {
   updateDriverPassword: (id, password) => api.patch(`/admin/drivers/update-password/${id}`, { password }),
   deleteDriver: (id) => api.delete(`/admin/drivers/${id}`),
   getDriverDeleteRequests: () => api.get('/admin/drivers/delete-requests'),
+  getDriverProfileChangeCount: () => api.get('/admin/drivers/profile-change-requests/count'),
   approveDriverDeleteRequest: (id) => api.patch(`/admin/drivers/delete-requests/${id}/approve`),
   rejectDriverDeleteRequest: (id, adminNote = '') => api.patch(`/admin/drivers/delete-requests/${id}/reject`, { adminNote }),
   getDriverNeededDocuments: (templateType = 'document') =>

@@ -60,6 +60,7 @@ import {
   getDriverEmergencyContacts,
   getDriverIncentives,
   getDriverNotifications,
+  markDriverNotificationsRead,
   cancelDriverScheduledRide,
   getDriverScheduledRides,
   getServiceCenterBookings,
@@ -303,6 +304,11 @@ driverRouter.get(
   "/notifications",
   authenticate(["driver"]),
   asyncHandler(getDriverNotifications),
+);
+driverRouter.post(
+  "/notifications/read",
+  authenticate(["driver"]),
+  asyncHandler(markDriverNotificationsRead),
 );
 driverRouter.get(
   "/scheduled-rides",

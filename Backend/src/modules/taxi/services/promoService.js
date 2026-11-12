@@ -108,8 +108,11 @@ export const validatePromoForContext = async ({
     return { eligible: false, reason: 'EXPIRED', message: 'Promo code has expired' };
   }
 
-  if (!serviceLocationId) {
-    return { eligible: false, reason: 'SERVICE_LOCATION_REQUIRED', message: 'service_location_id is required' };
+  // Only a promo tied to particular cities needs to know where the ride is. A
+  // pickup outside every zone used to make even an unrestricted code fail with
+  // "service_location_id is required".
+  if (!serviceLocationId && promoServiceLocationIds.length > 0) {
+    return { eligible: false, reason: 'SERVICE_LOCATION_REQUIRED', message: 'This promo code is not available in your area' };
   }
 
   if (promoServiceLocationIds.length > 0 && !promoServiceLocationIds.includes(serviceLocationId)) {
@@ -204,15 +207,14 @@ export const applyPromoToRideInTransaction = async ({
   if (!normalizedCode) {
     throw new ApiError(400, 'Promo code is required');
   }
-  if (!service_location_id) {
-    throw new ApiError(400, 'service_location_id is required when applying promo');
-  }
   if (!userId) {
     throw new ApiError(400, 'User is required when applying promo');
   }
 
   const transportType = normalizeTransportType(transport_type);
-  const serviceLocationId = toObjectIdOrThrow(service_location_id, 'service location id');
+  // Null when the pickup is outside every zone; fine for an unrestricted
+  // promo, rejected below for one tied to particular cities.
+  const serviceLocationId = service_location_id ? toObjectIdOrThrow(service_location_id, 'service location id') : null;
   const userObjectId = toObjectIdOrThrow(userId, 'user id');
 
   const promo = await PromoCode.findOne({ code: normalizedCode }).session(session);
@@ -232,7 +234,7 @@ export const applyPromoToRideInTransaction = async ({
   }
 
   const promoServiceLocationIds = getPromoServiceLocationIds(promo);
-  if (promoServiceLocationIds.length > 0 && !promoServiceLocationIds.includes(String(serviceLocationId))) {
+  if (promoServiceLocationIds.length > 0 && (!serviceLocationId || !promoServiceLocationIds.includes(String(serviceLocationId)))) {
     throw new ApiError(400, 'Promo code is not valid for this service location');
   }
 

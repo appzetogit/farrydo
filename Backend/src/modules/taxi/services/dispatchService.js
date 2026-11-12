@@ -1445,6 +1445,33 @@ const dispatchAttempt = async (rideId, attemptIndex = 0) => {
   }
 };
 
+/// Whether any driver of the booked type could take an immediate ride right
+/// now, searched as widely as dispatch itself ever searches (its last, widest
+/// attempt). Used before creating the ride, so the rider is told "no Auto
+/// nearby" instead of a booking that can only time out.
+export const hasDriversForImmediateBooking = async ({ pickupCoords, vehicleTypeId, vehicleTypeIds, serviceLocationId = null }) => {
+  const dispatchConfig = await resolveTransportDispatchConfig({ bidding: false });
+  const radius = getAttemptRadiusMeters(
+    dispatchConfig.baseDistanceMeters || dispatchConfig.maxDistanceMeters,
+    Number.MAX_SAFE_INTEGER,
+  );
+  const ids = [...new Set([vehicleTypeId, ...(Array.isArray(vehicleTypeIds) ? vehicleTypeIds : [])]
+    .map((id) => String(id || '').trim())
+    .filter(Boolean))];
+
+  const { drivers } = await matchDispatchDrivers({
+    ride: {
+      pickupLocation: { coordinates: pickupCoords },
+      vehicleTypeId: ids[0] || null,
+      service_location_id: serviceLocationId,
+    },
+    radius,
+    dispatchVehicleTypeIds: ids,
+  });
+
+  return drivers.length > 0;
+};
+
 export const startDispatchFlow = async (ride, { forceRestart = false } = {}) => {
   if (!ride?._id) {
     return;

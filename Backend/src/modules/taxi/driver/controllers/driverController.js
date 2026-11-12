@@ -6,6 +6,7 @@ import { env } from "../../../../config/env.js";
 import { ApiError } from "../../../../utils/ApiError.js";
 import { normalizePoint, toPoint } from "../../../../utils/geo.js";
 import { Driver } from "../models/Driver.js";
+import { DriverNotification } from "../models/DriverNotification.js";
 import { BusDriver } from "../models/BusDriver.js";
 import { DriverLoginSession } from "../models/DriverLoginSession.js";
 import { WalletTransaction } from "../models/WalletTransaction.js";
@@ -2715,6 +2716,18 @@ const serializeDriverNotification = (item = {}) => ({
   createdAt: item.createdAt || null,
 });
 
+const serializePersonalDriverNotification = (item = {}) => ({
+  id: String(item._id || ""),
+  title: String(item.title || "").trim(),
+  body: String(item.body || "").trim(),
+  image: "",
+  sendTo: "driver",
+  type: String(item.type || "general"),
+  serviceLocationName: "",
+  sentAt: item.createdAt || null,
+  createdAt: item.createdAt || null,
+});
+
 const serializeDriverScheduledRide = (ride = {}, currentDriverId = "") => ({
   rideId: String(ride._id || ""),
   type: ride.serviceType || "ride",
@@ -3120,16 +3133,48 @@ export const getDriverNotifications = async (req, res) => {
     ];
   }
 
-  const notifications = await Notification.find(query)
-    .sort({ sent_at: -1, createdAt: -1 })
-    .limit(100)
-    .lean();
+  const [broadcasts, personal] = await Promise.all([
+    Notification.find(query)
+      .sort({ sent_at: -1, createdAt: -1 })
+      .limit(100)
+      .lean(),
+    DriverNotification.find({ driverId: driver._id })
+      .sort({ createdAt: -1 })
+      .limit(100)
+      .lean(),
+  ]);
+
+  // Read state is one "last seen" time per driver: everything sent after it
+  // is unread. Opening the list calls POST /drivers/notifications/read.
+  const lastSeenAt = driver.notificationsLastSeenAt ? new Date(driver.notificationsLastSeenAt).getTime() : 0;
+  const results = [
+    ...broadcasts.map(serializeDriverNotification),
+    ...personal.map(serializePersonalDriverNotification),
+  ]
+    .map((item) => ({
+      ...item,
+      read: Boolean(item.sentAt) && new Date(item.sentAt).getTime() <= lastSeenAt,
+    }))
+    .sort((a, b) => new Date(b.sentAt || 0).getTime() - new Date(a.sentAt || 0).getTime())
+    .slice(0, 100);
 
   res.json({
     success: true,
     data: {
-      results: notifications.map(serializeDriverNotification),
+      results,
+      unreadCount: results.filter((item) => !item.read).length,
+      lastSeenAt: driver.notificationsLastSeenAt || null,
     },
+  });
+};
+
+export const markDriverNotificationsRead = async (req, res) => {
+  const seenAt = new Date();
+  await Driver.updateOne({ _id: req.auth.sub }, { $set: { notificationsLastSeenAt: seenAt } });
+
+  res.json({
+    success: true,
+    data: { unreadCount: 0, lastSeenAt: seenAt },
   });
 };
 
@@ -3431,10 +3476,15 @@ export const updateCurrentDriver = async (req, res) => {
 
   if (Object.prototype.hasOwnProperty.call(req.body || {}, "name")) {
     const name = String(req.body.name || "").trim();
-    if (!DRIVER_NAME_REGEX.test(name)) {
-      throw new ApiError(400, "Full name can contain alphabets only");
+    // Edit Profile resends the name with every save; only a changed name is
+    // checked, or a driver registered with e.g. a digit in it could never
+    // change their photo.
+    if (name !== String(driver.name || "").trim()) {
+      if (!DRIVER_NAME_REGEX.test(name)) {
+        throw new ApiError(400, "Full name can contain alphabets only");
+      }
+      driver.name = name;
     }
-    driver.name = name;
   }
 
   if (Object.prototype.hasOwnProperty.call(req.body || {}, "email")) {
@@ -3484,7 +3534,10 @@ export const updateCurrentDriver = async (req, res) => {
     );
   }
 
-  await driver.save();
+  // Validate only what this request changed: an old value elsewhere on the
+  // driver (a vehicleType from before the current enum) used to reject every
+  // profile save, photo included.
+  await driver.save({ validateModifiedOnly: true });
 
   res.json({
     success: true,
@@ -4161,6 +4214,27 @@ export const requestDriverAccountDeletion = async (req, res) => {
   });
 };
 
+/// Records that an approved driver changed something an admin must review.
+/// Adds to the fields already waiting rather than replacing them, so two edits
+/// before a review both show.
+const buildPendingProfileChange = (current = {}, field) => {
+  const wasPending = current?.status === "pending";
+  const fields = new Set(wasPending ? [...(current.fields || [])] : []);
+  fields.add(field);
+
+  return {
+    status: "pending",
+    fields: [...fields],
+    requestedAt: wasPending && current.requestedAt ? current.requestedAt : new Date(),
+    reviewedAt: null,
+    reviewedBy: null,
+  };
+};
+
+const markProfileChangePending = (driver, field) => {
+  driver.profileChangeRequest = buildPendingProfileChange(driver.profileChangeRequest, field);
+};
+
 export const updateCurrentDriverDocument = async (req, res) => {
   const documentKey = String(req.params.documentKey || "").trim();
   const document = req.body?.document || {};
@@ -4271,7 +4345,12 @@ export const updateCurrentDriverDocument = async (req, res) => {
   };
 
   driver.markModified("documents");
-  await driver.save();
+  // Onboarding uploads go through here too; only an approved driver's
+  // re-upload is a profile change the admin needs to look at.
+  if (driver.approve === true) {
+    markProfileChangePending(driver, `documents:${documentKey}`);
+  }
+  await driver.save({ validateModifiedOnly: true });
 
   res.json({
     success: true,
@@ -7586,6 +7665,11 @@ export const updateDriverVehicle = async (req, res) => {
   }
 
   if (vehicleChanged) {
+    // Only a driver who was approved has made a "change"; one still in
+    // onboarding is a new signup and is counted as such.
+    if (driver.approve === true || driver.profileChangeRequest?.status === "pending") {
+      update.profileChangeRequest = buildPendingProfileChange(driver.profileChangeRequest, "vehicle");
+    }
     update.approve = false;
     update.status = "pending";
     update.isOnline = false;

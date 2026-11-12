@@ -124,6 +124,7 @@ const PendingDrivers = () => {
     try {
       const responseData = await adminService.getDrivers(nextPage, nextLimit, {
         approve: false,
+        includeProfileChanges: true,
         search: String(nextSearch || '').trim(),
       });
       const driversList = responseData.data?.results || [];
@@ -142,6 +143,8 @@ const PendingDrivers = () => {
           reason: d.rejectionReason || d.rejected_reason || '-',
           rating: d.rating || 0.0,
           registeredAt: d.createdAt || null,
+          hasProfileChange: d.profile_change_status === 'pending',
+          profileChangeFields: d.profile_change_fields || [],
         }));
 
       setPendingDrivers(pending);
@@ -331,7 +334,17 @@ const PendingDrivers = () => {
               ) : (
                 pendingDrivers.map((driver) => (
                   <tr key={driver.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-3 py-1.5 font-medium text-gray-900">{driver.name}</td>
+                    <td className="px-3 py-1.5 font-medium text-gray-900">
+                      {driver.name}
+                      {driver.hasProfileChange && (
+                        <span
+                          className="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800"
+                          title={`Changed: ${driver.profileChangeFields.map((field) => field.replace(/^documents:/, '')).join(', ')}`}
+                        >
+                          Profile changed
+                        </span>
+                      )}
+                    </td>
                     <td className="px-3 py-1.5">
                       <span className="font-mono text-[10px] font-semibold px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 border border-gray-200">
                         {driver.driverCode}
